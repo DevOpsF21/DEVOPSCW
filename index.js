@@ -1,21 +1,19 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
 const app = express();
+app.use(express.json());
+users = [];
+app.post("/users", async (req, resp) => {
+  try {
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);
+    console.log(salt);
+    console.log(hashedPassword);
+    const user = { name: req.body.name, password: hashedPassword };
+    resp.status(201).send();
+  } catch {
+    resp.status(400).send();
+  }
 
-users = [
-  {
-    username: "user1",
-    password: "password1",
-  },
-  {
-    username: "user2",
-    password: "password2",
-  },
-  {
-    username: "user3",
-    password: "password3",
-  },
-];
-app.get("/users", (req, resp) => {
-  resp.json(users);
 });
 app.listen(3000);
