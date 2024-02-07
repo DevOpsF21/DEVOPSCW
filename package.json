@@ -1,0 +1,16 @@
+{
+  "name": "devopscw",
+  "version": "1.0.0",
+  "description": "This repo is created to integrate the DevOps project in one work place for F21AO Course work.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node regmodule.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.4.1",
+    "mongoose": "^6.10.0"
+  }
+}
