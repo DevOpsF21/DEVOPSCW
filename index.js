@@ -16,7 +16,7 @@ app.post("/users", async (req, resp) => {
     resp.status(201).send();
   } catch {
     resp.status(400).send();
-  }
+  } 
 
 });
 app.listen(3000);
