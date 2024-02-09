@@ -1,4 +1,7 @@
 const express = require("express");
+require('dotenv').config(); 
+const databaseUrl = process.env.DATABASE_URL;
+
 const bcrypt = require("bcrypt");
 const app = express();
 app.use(express.json());
