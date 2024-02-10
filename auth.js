@@ -20,7 +20,7 @@ connectToDb((err) => {
 });
 
 // Updated /users POST endpoint to store user in MongoDB
-app.post("/users", async (req, res) => {
+app.post("/createUser", async (req, res) => {
   try {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
