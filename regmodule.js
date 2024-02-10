@@ -1,29 +1,42 @@
+/*      
+This module, Patient Registration Module consists of this code "regmodule.js" and another two MonogoDB schema files "regops.js" & "logops.js" and other libraries
+The module is functioning in a way to receive API requests to create, search and delete patient records. 
+Patient records are stored through the regops while all activties are logged through the logops.
+The module will also validate different inputs received from external APIs to gurantee that the DB is protected.
+*/
+
+//Create the necessary libraries, dotenv is used for hiding the DB credentials while express & mangoose are used for API communicaiton
 const express = require('express');
 const regapp = express();
 const mongoose = require('mongoose');
 require('dotenv/config');
 const bodyParser = require('body-parser');
-const DBwrite = require('../DEVOPSCW/dbwriter/dbwriter');
 
-mongoose.connect(process.env.DB_CONNECTION, () => console.log('connected to DB'));
+//Two schemas are used under the Mongo collection for storing and retreiving the records.
+const regops = require('../DEVOPSCW/dbops/regops');
+const logops = require('../DEVOPSCW/dbops/logops');
+//note that there is no intention to retreive the logops through the applicaiton. Access to the logops will be only for investaiton and will be directily thoruhg Admin access.\
+
+//Here connection to DB using the variables from the .env
+mongoose.connect(process.env.DB_CONNECTION, () => console.log('BD is connected!'));
 
 regapp.use(bodyParser.json());
 
 // Middleware to validate inputs before creating a new record
 function validateInputs(req, res, next) {
-    const { pnumber, pname, dob, blood, gender, through } = req.body;
+    const { pnumber, pname, dob, blood, gender, through, knowndiseases, knownallergies } = req.body;
 
-    // Validation for pnumber
+    // Validation for pnumber (Patient Number), only 8 digits numbers will be accepted. This is assumed to be the national ID and will be a key identifier, cannot be replicated
     if (!/^\d{8}$/.test(pnumber)) {
         return res.status(400).json({ message: 'pnumber should be 8 digits only' });
     }
 
-    // Validation for pname
+    // Validation for pname, Patient Name can be only letters.
     if (!/^[a-zA-Z\s]+$/.test(pname)) {
         return res.status(400).json({ message: 'name should only include alphabets' });
     }
 
-    // Validation for dob
+    // Validation for dob, date of birth is between 120 yrs and current date only
     const dobDate = new Date(dob);
     const currentDate = new Date();
     const maxAgeDate = new Date(currentDate.getFullYear() - 120, currentDate.getMonth(), currentDate.getDate());
@@ -31,27 +44,35 @@ function validateInputs(req, res, next) {
         return res.status(400).json({ message: 'dob should be a valid date and between 120 years and today' });
     }
 
-    // Validation for blood if it's not empty
+    // Validation for blood if it's not empty, can be ignored for registration
     if (blood && !/^(A|B|AB|O)[+-]$/.test(blood)) {
         return res.status(400).json({ message: 'blood should be limited to accept blood group letters/combinations with + or -' });
     }
 
-    // Validation for gender
+    // Validation for gender, while controling the case of the inputs
     if (!['male', 'female'].includes(gender.toLowerCase())) {
         return res.status(400).json({ message: 'gender should be either "male" or "female"' });
     }
 
-    // Validation for through
-    if (!['OPD', 'A&E', 'Referred'].includes(through)) {
+    // Validation for through if it's provided, default is OPD
+    if (through && !['opd', 'a&e', 'referred'].includes(through.toLowerCase())) {
         return res.status(400).json({ message: 'through should be either "OPD", "A&E", or "Referred"' });
     }
+
+    /* known diseases and other strings, prepare for injection attacks*/
 
     next(); // Move to the next middleware
 }
 
+// the next subsections including the API calls of get, post & delete
+//          /v1/list                ->        to get all records 
+//          /v1/pnumber/xxxxxxxx    ->        to get a particual recrod
+//          /v1/pname/*             ->        to search names          
+//          /v1/delete/xxxxxxxx     ->        to delete a particual recrod
+
 regapp.get('/v1/list', async (req, res) => {
     try {
-        const readRecord = await DBwrite.find();
+        const readRecord = await regops.find();    //get all records
         res.json(readRecord);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -60,8 +81,21 @@ regapp.get('/v1/list', async (req, res) => {
 
 regapp.get('/v1/pnumber/:pnumber', async (req, res) => {
     try {
-        const readRecord = await DBwrite.find({ pnumber: req.params.pnumber });
+        // Fetch the records based on pnumber, one recrod at a time
+        const readRecord = await regops.find({ pnumber: req.params.pnumber });
+
+        // Log patient view, logging patient viewed and associated user viewed the record
+        const logEntry = new logops({
+            reglog: `Patient with pnumber ${req.params.pnumber} viewed!`,
+            timestamp: new Date().toISOString(),
+            user: "TBD"
+        });
+        await logEntry.save(); // Save the log entry to the database
+
+        // Send the fetched records as the response
         res.json(readRecord);
+
+//        console.log(`Patient with pnumber ${req.params.pnumber} viewed!`); // Log to console, test operation 
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -71,8 +105,16 @@ regapp.get('/v1/pname/:pname', async (req, res) => {
     try {
         const partialName = req.params.pname;
         const regex = new RegExp(partialName, 'i');
-        const readRecord = await DBwrite.find({ pname: { $regex: regex } });
+        const readRecord = await regops.find({ pname: { $regex: regex } }); //search for partial match
         res.json(readRecord);
+        
+        // Log patient search, user activtites including user details
+        const logEntry = new logops({
+            reglog: `Patient search with pname ${req.params.pname} performed!`,
+            timestamp: new Date().toISOString(),
+            user: "TBD"
+        });
+        await logEntry.save();
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -80,11 +122,19 @@ regapp.get('/v1/pname/:pname', async (req, res) => {
 
 regapp.post('/v1/reg/', validateInputs, async (req, res) => {
     console.log(req.body);
-    const createRecord = new DBwrite(req.body);
+    const createRecord = new regops(req.body);      //receives the body and reflect it in the DB collection
 
     try {
-        const savedRecord = await createRecord.save();
+        const savedRecord = await createRecord.save();  //save record then log entry
         res.status(200).json(savedRecord);
+        // Create a log entry
+        const logEntry = new logops({
+            reglog: JSON.stringify(req.body) + " patient registered!",  //retrun the registered record along with a confiraiton. 
+            timestamp: new Date().toISOString(),
+            user: "TBD"
+        });
+        await logEntry.save();
+
     } catch (err) {
         if (err.code === 11000 && err.keyPattern && err.keyPattern.pnumber) {
             res.status(400).json({ message: 'Duplicate pnumber found' });
@@ -97,98 +147,21 @@ regapp.post('/v1/reg/', validateInputs, async (req, res) => {
 // DELETE route to delete records based on pnumber
 regapp.delete('/v1/delete/:pnumber', async (req, res) => {
     try {
-        const deletedRecord = await DBwrite.findOneAndDelete({ pnumber: req.params.pnumber });
+        const deletedRecord = await regops.findOneAndDelete({ pnumber: req.params.pnumber });
         if (!deletedRecord) {
             return res.status(404).json({ message: 'Record not found' });
         }
         res.status(200).json({ message: 'Record deleted successfully', deletedRecord });
+        // Create a log entry
+        const logEntry = new logops({
+            reglog: JSON.stringify(req.body) + " patient deleted!", //return deleted record and log it with a timestamp
+            timestamp: new Date().toISOString(),
+            user: "TBD"
+        });
+        await logEntry.save();
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
 
 regapp.listen(8080);
-
-
-
-
-/*
-const express = require('express');
-
-const regapp = express();
-
-const mongoose = require('mongoose');
-// npm install mongoose@6.10.0 were used since the current version is giving an error
-
-require('dotenv/config');
-const bodyParser = require('body-parser')
-const DBwrite = require('../DEVOPSCW/dbwriter/dbwriter');
-
-mongoose.connect(process.env.DB_CONNECTION, () => console.log('connected to DB')); //move the credetnials to env file for extra secruity 
-
-regapp.use(bodyParser.json());
-
-//regapp.get('/v1/auth',(req,res) => { res.send("Bye");} );
-
-regapp.get('/v1/list', async (req, res) => {
-try{
-const readRecord = await DBwrite.find(); 
-res.json(readRecord);
-}catch{
-res.json({message:err});
-}
-});
-
-
-regapp.get('/v1/pnumber/:pnumber', async (req, res) => {
-    try{
-    const readRecord = await DBwrite.find({pnumber: req.params.pnumber}); 
-    res.json(readRecord);
-    }catch{
-    res.json({message:err});
-    }
-    });
-
-    regapp.get('/v1/pname/:pname', async (req, res) => {
-        try{
-            const partialName = req.params.pname;
-            const regex = new RegExp(partialName, 'i'); // 'i' makes the regex case-insensitive
-            const readRecord = await DBwrite.find({ pname: { $regex: regex } }); 
-            res.json(readRecord);
-        }catch{
-        res.json({message:err});
-        }
-        });
-    
-
-regapp.post('/v1/reg/',async (req,res) => { 
-    
-    console.log(req.body);
-    const createRecord = new DBwrite({
-
-
-        pnumber: req.body.pnumber,
-        pname: req.body.pname,
-        dob: req.body.dob,
-        regdate: req.body.regdate,
-        blood: req.body.regdate,
-        gender: req.body.gender,
-        through: req.body.through,
-        knowndiseases: req.body.knowndiseases,
-        knownallergies: req.body.knownallergies
-    });
-    try {
-        const savedRecord = await createRecord.save();
-        res.status(200).json(savedRecord);
-    } catch (err) {
-        if (err.code === 11000 && err.keyPattern && err.keyPattern.pnumber) {
-            res.status(400).json({ message: 'Duplicate pnumber found' });
-        } else {
-            res.status(500).json({ message: err.message });
-        }
-    } 
-} );
-
-regapp.listen(8080);
-
-*/

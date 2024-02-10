@@ -27,17 +27,20 @@ const regSchema = mongoose.Schema({
     through: 
     {
         type: String,
-        enum: ["OPD", "A&E", "Referred"], 
-        default: "OPD"
+        enum: ["opd", "a&e", "referred"], 
+        default: "opd",
+        lowercase: true // Converts input to lowercase before saving
     },
     
     knowndiseases: String,
-    knownallergies: String    
+    knownallergies: String
+    
+    //for the last two records, extra validation against injection attacks to be explored 
 });
 
 module.exports = mongoose.model('Registration', regSchema);
 
-/*
+/* Sample record below 
 {
     "pnumber": "88888888",
     "pname": "Abrar Ali",
