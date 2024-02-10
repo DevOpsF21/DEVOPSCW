@@ -5,7 +5,7 @@ const databaseUrl = process.env.DATABASE_URL;
 let dbConnection;
 module.exports = {
   connectToDb: (cb) => {
-    MongoClient.connect("")
+    MongoClient.connect(databaseUrl)
       .then((client) => {
         dbConnection = client.db();
         return cb();
