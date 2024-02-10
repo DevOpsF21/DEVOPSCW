@@ -1,10 +1,15 @@
 const express = require("express");
-require('dotenv').config(); 
-const databaseUrl = process.env.DATABASE_URL;
-
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+require("dotenv").config();
+const { connectToDb, getDb } = require("./db");
+
+const databaseUrl = process.env.DATABASE_URL;
 const app = express();
 app.use(express.json());
+
+//Connect to db
+
 users = [];
 app.post("/users", async (req, resp) => {
   try {
@@ -16,7 +21,6 @@ app.post("/users", async (req, resp) => {
     resp.status(201).send();
   } catch {
     resp.status(400).send();
-  } 
-
+  }
 });
 app.listen(3000);
