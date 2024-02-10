@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const regSchema = mongoose.Schema({
     pnumber: {
         type: Number,
-        required: true
+        required: true,
+        unique: true
     },
     pname: 
     {
@@ -17,19 +18,21 @@ const regSchema = mongoose.Schema({
     default: Date.now
     },
     blood: String,
-    gender: 
-    {
+    gender: {
         type: String,
-        required: true
+        enum: ["male", "female"],
+        required: true,
+        lowercase: true // Converts input to lowercase before saving
     },
     through: 
     {
         type: String,
+        enum: ["OPD", "A&E", "Referred"], 
         default: "OPD"
     },
     
     knowndiseases: String,
-    complains: String    
+    knownallergies: String    
 });
 
 module.exports = mongoose.model('Registration', regSchema);
