@@ -1,10 +1,9 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-require("dotenv").config();
+
 const { connectToDb, getDb } = require("./db");
 
-const databaseUrl = process.env.DATABASE_URL;
 const app = express();
 app.use(express.json());
 
