@@ -11,6 +11,7 @@ const regapp = express();
 const mongoose = require('mongoose');
 require('dotenv/config');
 const bodyParser = require('body-parser');
+const { verifyToken, verifyClerkRole } = require('./middleware/authMiddleware');
 
 //Two schemas are used under the Mongo collection for storing and retreiving the records.
 const regops = require('../DEVOPSCW/dbops/regops');
@@ -18,7 +19,9 @@ const logops = require('../DEVOPSCW/dbops/logops');
 //note that there is no intention to retreive the logops through the applicaiton. Access to the logops will be only for investaiton and will be directily thoruhg Admin access.\
 
 //Here connection to DB using the variables from the .env
-mongoose.connect(process.env.DB_CONNECTION_REG, () => console.log('BD is connected!'));
+mongoose.connect(process.env.DB_CONNECTION_REG)
+    .then(() => console.log('DB is connected!'))
+    .catch((err) => console.error('Unable to connect to DB.', err));
 
 regapp.use(bodyParser.json());
 
@@ -70,7 +73,7 @@ function validateInputs(req, res, next) {
 //          /v1/pname/*             ->        to search names          
 //          /v1/delete/xxxxxxxx     ->        to delete a particual recrod
 
-regapp.get('/v1/list', async (req, res) => {
+regapp.get('/v1/list', verifyToken, async (req, res) => {
     try {
         const readRecord = await regops.find();    //get all records
         res.json(readRecord);
@@ -120,7 +123,8 @@ regapp.get('/v1/pname/:pname', async (req, res) => {
     }
 });
 
-regapp.post('/v1/reg/', validateInputs, async (req, res) => {
+// Protecting the patient registration route
+regapp.post('/v1/reg/', verifyToken, verifyClerkRole, validateInputs, async (req, res) => {
     console.log(req.body);
     const createRecord = new regops(req.body);      //receives the body and reflect it in the DB collection
 
@@ -164,4 +168,4 @@ regapp.delete('/v1/delete/:pnumber', async (req, res) => {
     }
 });
 
-regapp.listen(8080);
+regapp.listen(8080, () => console.log('Server running on port 8080'));

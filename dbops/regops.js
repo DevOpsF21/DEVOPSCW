@@ -36,7 +36,7 @@ const regSchema = mongoose.Schema({
     knownallergies: String
 
     //for the last two records, extra validation against injection attacks to be explored 
-});
+}, { collection: 'Registration' }); // Specify the collection name here
 
 module.exports = mongoose.model('Registration', regSchema);
 
