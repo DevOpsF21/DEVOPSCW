@@ -62,7 +62,19 @@ function validateInputs(req, res, next) {
         return res.status(400).json({ message: 'through should be either "OPD", "A&E", or "Referred"' });
     }
 
-    /* known diseases and other strings, prepare for injection attacks*/
+    // Validation for knowndiseases and knownallergies from injected attacks
+    const diseasesValidation = Array.isArray(req.body.knowndiseases) &&
+        req.body.knowndiseases.every(d => typeof d === 'string' && /^[a-zA-Z\s,.-]+$/.test(d));
+    const allergiesValidation = Array.isArray(req.body.knownallergies) &&
+        req.body.knownallergies.every(a => typeof a === 'string' && /^[a-zA-Z\s,.-]+$/.test(a));
+
+    if (!diseasesValidation) {
+        return res.status(400).json({ message: 'Invalid known diseases format or content.' });
+    }
+
+    if (!allergiesValidation) {
+        return res.status(400).json({ message: 'Invalid known allergies format or content.' });
+    }
 
     next(); // Move to the next middleware
 }

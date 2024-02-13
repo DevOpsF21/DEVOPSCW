@@ -73,24 +73,6 @@ app.post("/v1/login", async (req, res) => {
   }
 });
 
-// // Middleware for JWT verification (example)
-// const verifyToken = (req, res, next) => {
-//   const token = req.headers["authorization"];
-//   if (!token)
-//     return res.status(401).send("Access Denied / Unauthorized request");
-//   try {
-//     token = token.split(" ")[1]; // Remove Bearer from string
-//     if (token === "null" || !token)
-//       return res.status(401).send("Unauthorized request");
-//     let verifiedUser = jwt.verify(token, process.env.JWT_SECRET); // verifies secret and checks exp
-//     req.user = verifiedUser; // user_id can be fetched like this
-//     next();
-//   } catch (error) {
-//     console.error("Token verification error:", error);
-//     res.status(400).send("Invalid Token");
-//   }
-// };
-
 // Example of a protected route
 app.get("/v1/protected", verifyToken, (req, res) => {
   res.send("This is a protected route");
