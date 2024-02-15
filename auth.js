@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const { verifyToken, verifyClerkRole } = require('./middleware/authMiddleware');
 
 const { connectToDb, getDb } = require("./db");
 
@@ -33,7 +34,7 @@ app.post("/v1/createUser", async (req, res) => {
     };
 
     const db = getDb();
-    await db.collection("users").insertOne(user);
+    await db.collection("auth").insertOne(user);
     res.status(201).send("User created");
   } catch (error) {
     if (error.code === 11000) {
@@ -50,7 +51,7 @@ app.post("/v1/login", async (req, res) => {
   try {
     const db = getDb();
     const user = await db
-      .collection("users")
+      .collection("auth")
       .findOne({ username: req.body.username });
     console.log(user);
     if (user == null) {
@@ -58,9 +59,10 @@ app.post("/v1/login", async (req, res) => {
     }
     if (await bcrypt.compare(req.body.password, user.password)) {
       // Generate and return a JWT token
-      const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: "2h",
-      });
+      const token = jwt.sign({
+        _id: user._id,
+        roles: user.roles // Ensures roles are included in the JWT payload
+      }, process.env.JWT_SECRET, { expiresIn: "2h" });
       res.json({ token: token, username: user.username, roles: user.roles });
     } else {
       res.status(401).send("Not Allowed");
@@ -70,24 +72,6 @@ app.post("/v1/login", async (req, res) => {
     res.status(500).send("An error occurred during login");
   }
 });
-
-// Middleware for JWT verification (example)
-const verifyToken = (req, res, next) => {
-  const token = req.headers["authorization"];
-  if (!token)
-    return res.status(401).send("Access Denied / Unauthorized request");
-  try {
-    token = token.split(" ")[1]; // Remove Bearer from string
-    if (token === "null" || !token)
-      return res.status(401).send("Unauthorized request");
-    let verifiedUser = jwt.verify(token, process.env.JWT_SECRET); // verifies secret and checks exp
-    req.user = verifiedUser; // user_id can be fetched like this
-    next();
-  } catch (error) {
-    console.error("Token verification error:", error);
-    res.status(400).send("Invalid Token");
-  }
-};
 
 // Example of a protected route
 app.get("/v1/protected", verifyToken, (req, res) => {
