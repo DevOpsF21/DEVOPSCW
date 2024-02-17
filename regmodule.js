@@ -11,6 +11,7 @@ const regapp = express();
 const mongoose = require('mongoose');
 require('dotenv/config');
 const bodyParser = require('body-parser');
+const { verifyToken, verifyClerkRole } = require('./middleware/authMiddleware');
 
 //Two schemas are used under the Mongo collection for storing and retreiving the records.
 const regops = require('../DEVOPSCW/dbops/regops');
@@ -18,7 +19,9 @@ const logops = require('../DEVOPSCW/dbops/logops');
 //note that there is no intention to retreive the logops through the applicaiton. Access to the logops will be only for investaiton and will be directily thoruhg Admin access.\
 
 //Here connection to DB using the variables from the .env
-mongoose.connect(process.env.DB_CONNECTION, () => console.log('BD is connected!'));
+mongoose.connect(process.env.DB_CONNECTION_REG)
+    .then(() => console.log('DB is connected!'))
+    .catch((err) => console.error('Unable to connect to DB.', err));
 
 regapp.use(bodyParser.json());
 
@@ -31,7 +34,7 @@ function validateInputs(req, res, next) {
         return res.status(400).json({ message: 'pnumber should be 8 digits only' });
     }
 
-    // Validation for pname, Patient Name can be only letters.
+    // Validation for patientByName, Patient Name can be only letters.
     if (!/^[a-zA-Z\s]+$/.test(pname)) {
         return res.status(400).json({ message: 'name should only include alphabets' });
     }
@@ -59,18 +62,30 @@ function validateInputs(req, res, next) {
         return res.status(400).json({ message: 'through should be either "OPD", "A&E", or "Referred"' });
     }
 
-    /* known diseases and other strings, prepare for injection attacks*/
+    // Validation for knowndiseases and knownallergies from injected attacks
+    const diseasesValidation = Array.isArray(req.body.knowndiseases) &&
+        req.body.knowndiseases.every(d => typeof d === 'string' && /^[a-zA-Z\s,.-]+$/.test(d));
+    const allergiesValidation = Array.isArray(req.body.knownallergies) &&
+        req.body.knownallergies.every(a => typeof a === 'string' && /^[a-zA-Z\s,.-]+$/.test(a));
+
+    if (!diseasesValidation) {
+        return res.status(400).json({ message: 'Invalid known diseases format or content.' });
+    }
+
+    if (!allergiesValidation) {
+        return res.status(400).json({ message: 'Invalid known allergies format or content.' });
+    }
 
     next(); // Move to the next middleware
 }
 
 // the next subsections including the API calls of get, post & delete
-//          /v1/list                ->        to get all records 
-//          /v1/pnumber/xxxxxxxx    ->        to get a particual recrod
-//          /v1/pname/*             ->        to search names          
-//          /v1/delete/xxxxxxxx     ->        to delete a particual recrod
+//          /v1/allPatients                ->        to get all records 
+//          /v1/patientByNumber/xxxxxxxx    ->        to get a particual recrod
+//          /v1/patientByName/*             ->        to search names          
+//          /v1/patientByNumber/xxxxxxxx     ->        to delete a particual recrod
 
-regapp.get('/v1/list', async (req, res) => {
+regapp.get('/v1/allPatients', verifyToken, async (req, res) => {
     try {
         const readRecord = await regops.find();    //get all records
         res.json(readRecord);
@@ -79,14 +94,14 @@ regapp.get('/v1/list', async (req, res) => {
     }
 });
 
-regapp.get('/v1/pnumber/:pnumber', async (req, res) => {
+regapp.get('/v1/patientByNumber/:pnumber', async (req, res) => {
     try {
         // Fetch the records based on pnumber, one recrod at a time
         const readRecord = await regops.find({ pnumber: req.params.pnumber });
 
         // Log patient view, logging patient viewed and associated user viewed the record
         const logEntry = new logops({
-            reglog: `Patient with pnumber ${req.params.pnumber} viewed!`,
+            reglog: `Patient with patientByNumber ${req.params.pnumber} viewed!`,
             timestamp: new Date().toISOString(),
             user: "TBD"
         });
@@ -95,22 +110,22 @@ regapp.get('/v1/pnumber/:pnumber', async (req, res) => {
         // Send the fetched records as the response
         res.json(readRecord);
 
-//        console.log(`Patient with pnumber ${req.params.pnumber} viewed!`); // Log to console, test operation 
+        //        console.log(`Patient with pnumber ${req.params.pnumber} viewed!`); // Log to console, test operation 
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
 
-regapp.get('/v1/pname/:pname', async (req, res) => {
+regapp.get('/v1/patientByName/:pname', async (req, res) => {
     try {
         const partialName = req.params.pname;
         const regex = new RegExp(partialName, 'i');
         const readRecord = await regops.find({ pname: { $regex: regex } }); //search for partial match
         res.json(readRecord);
-        
+
         // Log patient search, user activtites including user details
         const logEntry = new logops({
-            reglog: `Patient search with pname ${req.params.pname} performed!`,
+            reglog: `Patient search with patientByName ${req.params.pname} performed!`,
             timestamp: new Date().toISOString(),
             user: "TBD"
         });
@@ -120,7 +135,8 @@ regapp.get('/v1/pname/:pname', async (req, res) => {
     }
 });
 
-regapp.post('/v1/reg/', validateInputs, async (req, res) => {
+// Protecting the patient registration route
+regapp.post('/v1/reg/', verifyToken, verifyClerkRole, validateInputs, async (req, res) => {
     console.log(req.body);
     const createRecord = new regops(req.body);      //receives the body and reflect it in the DB collection
 
@@ -144,8 +160,8 @@ regapp.post('/v1/reg/', validateInputs, async (req, res) => {
     }
 });
 
-// DELETE route to delete records based on pnumber
-regapp.delete('/v1/delete/:pnumber', async (req, res) => {
+// DELETE route to delete records based on patientByNumber
+regapp.delete('/v1/patientByNumber/:pnumber', async (req, res) => {
     try {
         const deletedRecord = await regops.findOneAndDelete({ pnumber: req.params.pnumber });
         if (!deletedRecord) {
@@ -164,4 +180,4 @@ regapp.delete('/v1/delete/:pnumber', async (req, res) => {
     }
 });
 
-regapp.listen(8080);
+regapp.listen(8080, () => console.log('Server running on port 8080'));
