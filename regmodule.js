@@ -19,7 +19,7 @@ const logops = require('../DEVOPSCW/dbops/logops');
 //note that there is no intention to retreive the logops through the applicaiton. Access to the logops will be only for investaiton and will be directily thoruhg Admin access.\
 
 //Here connection to DB using the variables from the .env
-mongoose.connect(process.env.DB_CONNECTION_REG)
+mongoose.connect(process.env.DATABASE_URL)
     .then(() => console.log('DB is connected!'))
     .catch((err) => console.error('Unable to connect to DB.', err));
 

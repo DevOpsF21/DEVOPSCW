@@ -1,6 +1,6 @@
 require("dotenv").config();
 const { MongoClient } = require("mongodb");
-const databaseUrl = process.env.DATABASE_URL_AUTH;
+const databaseUrl = process.env.DATABASE_URL;
 
 let dbConnection;
 
