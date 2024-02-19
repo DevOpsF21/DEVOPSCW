@@ -2,7 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { verifyToken, verifyClerkRole } = require('./middleware/authMiddleware');
+const { verifyToken } = require('./middleware/authMiddleware');
+const { ObjectId } = require("mongodb");
 
 const { connectToDb, getDb } = require("./db");
 
@@ -85,6 +86,42 @@ app.post("/v1/login", async (req, res) => {
 // Example of a protected route
 app.get("/v1/protected", verifyToken, (req, res) => {
   res.send("This is a protected route");
+});
+
+// Endpoint to change user password
+app.post("/v1/changePassword", verifyToken, async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.user._id; // Assuming _id is stored in JWT payload
+
+  try {
+    const db = getDb();
+    const user = await db.collection("auth").findOne({ _id: new ObjectId(userId) });
+
+    if (!user) {
+      return res.status(404).send("User not found.");
+    }
+
+    // Verify old password
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).send("Old password is incorrect.");
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt();
+    const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password in the database
+    await db.collection("auth").updateOne(
+      { _id: new ObjectId(userId) },
+      { $set: { password: hashedNewPassword } }
+    );
+
+    res.send("Password changed successfully.");
+  } catch (error) {
+    console.error("Change password error:", error);
+    res.status(500).send("An error occurred while changing the password.");
+  }
 });
 
 // Don't forget to set your process.env.JWT_SECRET before running the application.
