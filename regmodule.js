@@ -103,7 +103,7 @@ regapp.get('/v1/pnumber/:pnumber', async (req, res) => {
         const logEntry = new logops({
             reglog: `Patient with pnumber ${req.params.pnumber} viewed!`,
             timestamp: new Date().toISOString(),
-            user: "TBD"
+            user: req.user.username
         });
         await logEntry.save(); // Save the log entry to the database
 
@@ -127,7 +127,7 @@ regapp.get('/v1/pname/:pname', async (req, res) => {
         const logEntry = new logops({
             reglog: `Patient search with pname ${req.params.pname} performed!`,
             timestamp: new Date().toISOString(),
-            user: "TBD"
+            user: req.user.username
         });
         await logEntry.save();
     } catch (err) {
@@ -147,7 +147,7 @@ regapp.post('/v1/reg/', verifyToken, verifyClerkRole, validateInputs, async (req
         const logEntry = new logops({
             reglog: JSON.stringify(req.body) + " patient registered!",  //retrun the registered record along with a confiraiton. 
             timestamp: new Date().toISOString(),
-            user: "TBD"
+            user: req.user.username
         });
         await logEntry.save();
 
@@ -172,7 +172,7 @@ regapp.delete('/v1/delete/:pnumber', async (req, res) => {
         const logEntry = new logops({
             reglog: JSON.stringify(req.body) + " patient deleted!", //return deleted record and log it with a timestamp
             timestamp: new Date().toISOString(),
-            user: "TBD"
+            user: req.user.username
         });
         await logEntry.save();
     } catch (err) {

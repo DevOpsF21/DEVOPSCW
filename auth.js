@@ -22,30 +22,38 @@ connectToDb((err) => {
 
 // Updated /users POST endpoint to store user in MongoDB
 app.post("/v1/createUser", async (req, res) => {
+  const { username, email, password, roles } = req.body;
   try {
+    const db = getDb();
+
+    // Check for existing user with the same username or email
+    const existingUser = await db.collection("auth").findOne({
+      $or: [{ username: username }, { email: email }]
+    });
+
+    if (existingUser) {
+      return res.status(409).send("Username or email already exists.");
+    }
+
     const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(req.body.password, salt);
-    const user = {
-      username: req.body.username,
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newUser = {
+      username,
+      email,
       password: hashedPassword,
-      email: req.body.email,
-      roles: req.body.roles,
+      roles,
       created_at: new Date(),
     };
 
-    const db = getDb();
-    await db.collection("auth").insertOne(user);
+    await db.collection("auth").insertOne(newUser);
     res.status(201).send("User created");
   } catch (error) {
-    if (error.code === 11000) {
-      // If the error is due to a duplicate key (e.g., email already exists)
-      res.status(409).send("User with the given email already exists.");
-    } else {
-      console.error("Error creating user:", error);
-      res.status(500).send("Error creating user");
-    }
+    console.error("Error creating user:", error);
+    res.status(500).send("Error creating user");
   }
 });
+
 // Add a login endpoint
 app.post("/v1/login", async (req, res) => {
   try {
@@ -61,7 +69,8 @@ app.post("/v1/login", async (req, res) => {
       // Generate and return a JWT token
       const token = jwt.sign({
         _id: user._id,
-        roles: user.roles // Ensures roles are included in the JWT payload
+        username: user.username, // Include username here
+        roles: user.roles
       }, process.env.JWT_SECRET, { expiresIn: "2h" });
       res.json({ token: token, username: user.username, roles: user.roles });
     } else {
