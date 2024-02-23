@@ -102,7 +102,7 @@ const patientSchema=mongoose.Schema({
         required: true,
     },
     bed_number:{
-        type: Number,
+        type: String,
         required: true,
     },
     condition:{
@@ -173,6 +173,16 @@ const wardSchema = mongoose.Schema({
     },
     current_patients: { //ocuupied beds
         type: Number,
+        required: true,
+        default:0
+    },
+    contact: { //ocuupied beds
+        type: String,
+        required: true,
+        default:0
+    },
+    receptionist: { //ocuupied beds
+        type: String,
         required: true,
         default:0
     },

@@ -1,8 +1,13 @@
 /*      
-This module, Patient Registration Module consists of this code "regmodule.js" and another two MonogoDB schema files "regops.js" & "logops.js" and other libraries
-The module is functioning in a way to receive API requests to create, search and delete patient records. 
-Patient records are stored through the regops while all activties are logged through the logops.
-The module will also validate different inputs received from external APIs to gurantee that the DB is protected.
+This module, Ward Management Module consists of this code "wardmodule.js" 
+and another two MonogoDB schema files "wardops.js" & "dischargeops.js" and other libraries
+The module is functioning in a way to receive API requests to:
+1. Add/update ward details
+2. Add ward maintenance history
+3. Add/update ward medical equipment
+4. Add/update nurse assignment to wards along with the shifts details
+5. Add/Update Room to wards and bedrooms to rooms and furniture details to rooms
+6. Patient addmission and discharge from the ward
 */
 
 //Create the necessary libraries, dotenv is used for hiding the DB credentials while express & mangoose are used for API communicaiton
@@ -31,30 +36,88 @@ const uri = process.env.DATABASE_URL;
 const dbName = 'test';
 const collectionName = 'Ward Management';
 
-function readCollection(){
-    
-}
+/*
+1. Create ward with basic details
+* empty list of maintenance, equipments, rooms, and nurses
+* and default value for all fields
+* capacity=0, number_of_rooms=0,current_patients=0
+2. update ward details as needed
+*/
+wardapp.post('/v1/ward/:operation',  async (req, res) => {
 
-//Post request create a ward with empty list of maintenance, equipments, rooms, and nurses
-//and default value for all fields
-//capacity=0, number_of_rooms=0,current_patients=0
-wardapp.post('/v1/ward/',  async (req, res) => {
-    console.log("post function")
+    /**
+     * post man for adding
+     * {
+            "ward_number":"W111",
+            "ward_name":"maternity",
+            "floor_number":"1st Floor",
+            "contact":"0407878787",
+            "receptionist":"Lisa Brown"
+        }
+     * 
+     * postman for updating
+     * {"fields":{
+            "ward_number":"W111",
+            "floor_number":"Ground Floor",
+            "receptionist":"Alex Hernandes"
+        }
+        }
+     */
+    const { operation } = req.params;
     console.log(req.body);
-    const newWard = new wardops({
-        ward_number:req.body.ward_number,
-        ward_name:req.body.ward_name,
-        floor_number:req.body.floor_number,
-    });      
-    try {
-        const savedRecord = await newWard.save();  
-        res.status(200).json(savedRecord);
-        //res.json(savedRecord)
-    } catch (err) {
-        if (err.code === 11000 && err.keyPattern && err.keyPattern.pnumber) {
-            res.status(400).json({ message: 'Duplicate ward number' });
+    if (operation==='Add'){
+        const newWard = new wardops({
+            ward_number:req.body.ward_number,
+            ward_name:req.body.ward_name,
+            floor_number:req.body.floor_number,
+            contact:req.body.contact,
+            receptionist:req.body.receptionist
+        });      
+        try {
+            const savedRecord = await newWard.save();  
+            res.status(200).json(savedRecord);
+            //res.json(savedRecord)
+        } catch (err) {
+            if (err.code === 11000 && err.keyPattern && err.keyPattern.pnumber) {
+                res.status(400).json({ message: 'Duplicate ward number' });
+            } else {
+                res.status(500).json({ message: err.message });
+            }
+        }
+    }
+    else if(operation==='Update'){
+        const { fields } = req.body;
+        console.log("updatig")
+        console.log(fields)
+        const updateOperation = {};
+        let wardnumber=0
+        const client = new MongoClient(uri);
+        // Connect to the MongoDB server
+        await client.connect();
+        // Select the database and collection
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+        for (const field in fields) {
+            console.log(field)
+            if (field==="ward_number"){
+                wardnumber=fields[field]
+            }
+            else{
+                updateOperation[`${field}`] = fields[field];
+            }
+        }
+        console.log(wardnumber)
+        const result = await collection.updateOne(
+            { ward_number: wardnumber}, // find equipment in ward
+            { $set: updateOperation }, // update each field
+        );
+
+        //console.log({ ward_number: wardnumber})
+
+        if (result.modifiedCount === 1) {
+            res.send('ward updated successfully');
         } else {
-            res.status(500).json({ message: err.message });
+            res.status(404).send('ward number not found');
         }
     }
 });
