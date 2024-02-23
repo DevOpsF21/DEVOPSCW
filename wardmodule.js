@@ -278,4 +278,80 @@ wardapp.post('/v1/nurse/:wardnumber/:nurseid/:operation',  async (req, res) => {
     
 });
 
+
+
+
+/**
+ * recieves ward numberm and room number and adds the new room along with the beds,
+ * capacity and furniture array
+ * it also updates ward room count and capacity
+ */
+wardapp.post('/v1/room/:wardnumber/:roomid/',  async (req, res) => {
+    const { wardnumber, roomid, operation} = req.params;
+    console.log(req.params);
+    console.log(operation);
+    /**
+     postman test for add: 
+           {"room":{
+            "room_number":"R001",
+            "room_type":"Shared",
+            "capacity":2,
+            "beds":[
+                {"bed_number":"B001","status":"Free"},
+                {"bed_number":"B002","status":"Free"}
+                ],
+            "patients":[],
+            "furniture":[
+                    {
+                        "furniture_number": "F001",
+                        "furniture_name": "Fridge"
+                    }
+                    ]
+                }
+            }
+     */
+    // Create a new MongoClient
+    try{
+        
+        const client = new MongoClient(uri);
+        
+        // Connect to the MongoDB server
+        await client.connect();
+
+        // Select the database and collection
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+        
+        console.log("inserting")
+        const { room } = req.body;
+        //if not then add to the list
+        const result = await collection.updateOne(
+            { ward_number: wardnumber, }, // Filter based on ward number
+            { $addToSet: { rooms: room } } // add equipment to list
+        );
+        if (result.modifiedCount === 1) {
+            res.send('room added successfully');
+            //update room count and capacity of the ward
+            const updateWard = await collection.updateOne(
+                { ward_number: wardnumber, }, // Filter based on ward number
+                { $inc: {number_of_rooms: 1,capacity: room.capacity} } // update ward details
+            );
+                //console.log( { $inc: {number_of_rooms: 1,capacity: room.capacity} })
+            if (updateWard.modifiedCount === 1) {
+                    res.send('ward updated successfully');
+                } else {
+                    res.status(404).send('could not update ward');
+                }
+        } else {
+            res.status(404).send('ward number not found');
+        }
+        
+        }
+        catch (err) {
+            console.error('Error occurred:', err);
+            res.status(500).send('Syntax or variable error');
+        }
+    
+});
+
 wardapp.listen(8585, () => console.log('Ward Management Server running on port 8585'));
