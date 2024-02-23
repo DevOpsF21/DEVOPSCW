@@ -1065,25 +1065,12 @@ wardapp.post('/v1/admission/:wardnumber/:roomtype/',  async (req, res) => {
 
 /**
  * recieves patient number
- * if not found return "wrong patient number"
- * else saves the patient details into a log file then removes the patient from the list
- * finds wards and reduced pataient_number by 1,
- * find the bed that was assigned to him and sets status to free
- * it also updates ward room count and capacity
+ * if not found return "wrong patient number or patient is discharged"
+ * else it show ward details, room and bed details and patient admission details
  */
-wardapp.post('/v1/admission/:wardnumber/:roomtype/',  async (req, res) => {
-    const { wardnumber, roomtype} = req.params;
+wardapp.get('/v1/findpatient/:patientid',  async (req, res) => {
+    const {patientid} = req.params;
     console.log(req.params);
-    const {patientid,condition,admission_date,expected_discharge_date}=req.body
-    /**
-     postman test for add: 
-           {
-            "patientid":"P111",
-            "condition":"critical",
-            "admission_date":"2024-02-20",
-            "expected_discharge_date":"2024-02-22"
-            }
-     */
     // Create a new MongoClient
     try{
         
@@ -1096,75 +1083,45 @@ wardapp.post('/v1/admission/:wardnumber/:roomtype/',  async (req, res) => {
         const db = client.db(dbName);
         const collection = db.collection(collectionName);
         
+        let pipeline=[]
         //add consition if capacity===num_patients then it's full
-            console.log("inserting")
-            const pipeline = [
-                {$match:{ward_number: wardnumber}},
-                { $unwind: "$rooms" }, // Unwind the rooms array
-                { $match: { "rooms.room_type": roomtype}}, 
-                { $unwind: "$rooms.beds" },
-                { $match: { "rooms.beds.status": "Free"}},// Match rooms with the specified room type and at least one free bed
-                { $limit: 1 } // Limit to the first matching room
-            ];
-    
-            // Execute aggregation pipeline
-            const room = await collection.aggregate(pipeline).next();
-            console.log("Aggregation Pipeline:", JSON.stringify(room));
-            if (room) {
-                // If a suitable room is found, add the patient to its patients list
-                const bed_number =room.rooms.beds.bed_number;
-                const result = await collection.updateOne(
-                    { "rooms.room_number": room.rooms.room_number,}, // Match the room by its _id and the room within it by its _id
-                    { $addToSet: { "rooms.$.patients": 
-                                {   patient_number:patientid,
-                                    bed_number:bed_number,
-                                    condition:condition,
-                                    admission_date:admission_date,
-                                    expected_discharge_date:expected_discharge_date,
-                                } 
-                            } } // Push the patient to the patients array of the matched room
-                );
-
-                //console.log({ "rooms.room_number": room.rooms.room_number })
-                // Check if the update operation was successful
-                if (result.modifiedCount === 1) {
-                    res.status(200).json({ message: 'Patient added successfully.' });
-                    const updateWard = await collection.updateOne(
-                        { ward_number: wardnumber }, // Match the room by its _id and the room within it by its _id
-                        { $inc: { current_patients:1} } // Push the patient to the patients array of the matched room
-                    );
-
-                    const updateBed = await collection.updateOne(
-                        { ward_number: wardnumber },
-                        {'$set': {'rooms.$[r].beds.$[b].status': 'Occupied'}},
-                        {arrayFilters: [
-                            {'r.room_number': room.rooms.room_number},
-                            {'b.bed_number': bed_number}]},
-                        function(err, doc) {
-                            if (err) {
-                                res.status(500).send(err);
-                            }
-                            res.send(doc);
-                        }
-                    );
-
-                } else {
-                    res.status(500).json({ error: 'Failed to add patient.' });
-                }
-            } else {
-                res.status(404).json({ error: 'No suitable room found.' });
-            }
+        pipeline = [
+            { $unwind: "$rooms" }, // Unwind the rooms array
+            { $unwind: "$rooms.patients" }, //unwind patients array
+            { $match: { "rooms.patients.patient_number": patientid}},//find record with the patient
+            { $addFields:{"Room Number":"$rooms.room_number"}},
+            { $project:{patients:1,ward_number:1,ward_name:1,floor_number:1,
+                "rooms.room_number":1,"rooms.patients":1,_id:0}}
+        ];
+        //console.log("Aggregation Pipeline:", JSON.stringify(pipeline));
+        // Execute aggregation pipeline
+        const readPatient = await collection.aggregate(pipeline).toArray();
+        await client.close();
+        if (readPatient.length===0){
+            res.status(500).send('Patient ID is invalid or patient is discharged');
+        }else{
+            res.json(readPatient);
+             //console.log("Aggregation Pipeline:", JSON.stringify(readPatient));
         }
-        catch (err) {
-            console.error('Error occurred:', err);
-            res.status(500).send('Syntax or variable error');
-        }
-    
+    }
+    catch (err) {
+        console.error('Error occurred:', err);
+        res.status(500).send('Syntax or variable error');
+    }
+
 });
 
 
+/**
+ * recieves patient number and action 
+ * if not found return "wrong patient number"
+ * if search it only shows patient details
+ * if discharge it chec
+ * saves the patient details into a log file then removes the patient from the list
+ * finds wards and reduced pataient_number by 1,
+ * find the bed that was assigned to him and sets status to free
+ * it also updates ward room count and capacity
+ */
 
 
-
-
-wardapp.listen(8585, () => console.log('Ward Management Server running on port 8585'));
+wardapp.listen(8686, () => console.log('Ward Management Server running on port 8686'));
