@@ -99,4 +99,90 @@ wardapp.post('/v1/addmaintenance/:wardnumber/',  async (req, res) => {
     }
 });
 
+
+/**
+ * assumption: add or update a single element at a time
+ * recieves ward number, equipment number and operation to be performed
+ * if update: updates all the fields provided with the new values
+ * if add, it adds the new equipment
+ */
+wardapp.post('/v1/medicalequipment/:wardnumber/:equipnumber/:operation',  async (req, res) => {
+    const { wardnumber, equipnumber, operation} = req.params;
+    console.log(req.params);
+    console.log(operation);
+    /**
+     postman test for add: 
+           {"equipment":{
+                "equipment_id": "E001",
+                "equipment_name": "Defibrillator",
+                "condition": "Good"
+            }}
+        postman test for update: 
+          {"fields":{
+            "condition": "new"
+          }}
+     */
+    // Create a new MongoClient
+    try{
+        
+        const client = new MongoClient(uri);
+        
+        // Connect to the MongoDB server
+        await client.connect();
+
+        // Select the database and collection
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+        //updates a single field at a time
+        if (operation === 'update') {
+            const { fields,value } = req.body;
+            console.log("updatig")
+
+
+            const updateOperation = {};
+            for (const field in fields) {
+                updateOperation[`medicalEquipment.$[elem].${field}`] = fields[field];
+            }
+            
+ 
+            //console.log("Array Filters:", [{ "elem.equipment_id": equipnumber }]);
+            const result = await collection.updateOne(
+                { ward_number: wardnumber}, // find equipment in ward
+                { $set: updateOperation }, // update each field
+                { arrayFilters: [{ "elem.equipment_id": equipnumber }] }
+            );
+
+            //console.log({ ward_number: wardnumber})
+
+            if (result.modifiedCount === 1) {
+                res.send('equipment updated successfully');
+            } else {
+                res.status(404).send('ward number not found');
+            }
+        } else { //insert
+            
+                //check if equipment id already exists 
+                //add this part later 
+                console.log("inserting")
+                const { equipment } = req.body;
+                //if not then add to the list
+                const result = await collection.updateOne(
+                    { ward_number: wardnumber, }, // Filter based on ward number
+                    { $addToSet: { medicalEquipment: equipment } } // add equipment to list
+                );
+                if (result.modifiedCount === 1) {
+                    res.send('equipment added successfully');
+                } else {
+                    res.status(404).send('ward number not found');
+                }
+            }
+        
+        }
+        catch (err) {
+            console.error('Error occurred:', err);
+            res.status(500).send('Syntax or variable error');
+        }
+    
+});
+
 wardapp.listen(8585, () => console.log('Ward Management Server running on port 8585'));
