@@ -58,3 +58,45 @@ wardapp.post('/v1/ward/',  async (req, res) => {
     }
 });
 
+/**
+ * adding maintenance history to each ward
+ */
+wardapp.post('/v1/addmaintenance/:wardnumber/',  async (req, res) => {
+    console.log("post function")
+    //console.log(req.body);
+    const { wardnumber } = req.params;
+    /**
+     postman test: {"newMaintenance":
+        {"last_maintenance_date":"2024-02-28T12:00:00", 
+        "next_maintenance_date":"2024-03-01T12:00:00"}}
+     */
+    const { newMaintenance } = req.body;
+    console.log(wardnumber);
+    try{
+        // Create a new MongoClient
+        const client = new MongoClient(uri);
+
+        // Connect to the MongoDB server
+        await client.connect();
+
+        // Select the database and collection
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+
+        const result = await collection.updateOne(
+            { ward_number: wardnumber }, // Filter based on ward number
+            { $addToSet: { maintenance: newMaintenance } } // Update array of maintenance object
+        );
+        if (result.modifiedCount === 1) {
+            res.send('Maintenance added successfully');
+        } else {
+            res.status(404).send('Ward number not found');
+        }
+    }
+    catch (err) {
+        console.error('Error occurred:', err);
+        res.status(500).send('Database or variable error');
+    }
+});
+
+wardapp.listen(8585, () => console.log('Ward Management Server running on port 8585'));
