@@ -1,4 +1,8 @@
 const mongoose = require('mongoose');
+<<<<<<< HEAD
+=======
+const sanitize = require('mongo-sanitize');
+>>>>>>> origin/main
 
 const regSchema = mongoose.Schema({
     pnumber: {
@@ -6,6 +10,7 @@ const regSchema = mongoose.Schema({
         required: true,
         unique: true
     },
+<<<<<<< HEAD
     pname: 
     {
         type: String,
@@ -16,6 +21,16 @@ const regSchema = mongoose.Schema({
     {
     type: Date,
     default: Date.now
+=======
+    pname: {
+        type: String,
+        required: true
+    },
+    dob: Date,
+    regdate: {
+        type: Date,
+        default: Date.now
+>>>>>>> origin/main
     },
     blood: String,
     gender: {
@@ -24,6 +39,7 @@ const regSchema = mongoose.Schema({
         required: true,
         lowercase: true // Converts input to lowercase before saving
     },
+<<<<<<< HEAD
     through: 
     {
         type: String,
@@ -48,3 +64,34 @@ module.exports = mongoose.model('Registration', regSchema);
     "gender": "Male"
 }
 */
+=======
+    through: {
+        type: String,
+        enum: ["opd", "a&e", "referred"],
+        default: "opd",
+        lowercase: true // Converts input to lowercase before saving
+    },
+    knowndiseases: {
+        type: [String],
+        validate: {
+            validator: function (v) {
+                // Ensure each string in the array is sanitized
+                return v.every(disease => typeof disease === 'string' && sanitize(disease) === disease);
+            },
+            message: props => `${props.value} is not a valid disease list`
+        }
+    },
+    knownallergies: {
+        type: [String],
+        validate: {
+            validator: function (v) {
+                // Ensure each string in the array is sanitized
+                return v.every(allergy => typeof allergy === 'string' && sanitize(allergy) === allergy);
+            },
+            message: props => `${props.value} is not a valid allergy list`
+        }
+    }
+}, { collection: 'Registration' }); // Specify the collection name here
+
+module.exports = mongoose.model('Registration', regSchema);
+>>>>>>> origin/main
