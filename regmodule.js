@@ -19,11 +19,7 @@ const logops = require('../DEVOPSCW/dbops/logops');
 //note that there is no intention to retreive the logops through the applicaiton. Access to the logops will be only for investaiton and will be directily thoruhg Admin access.\
 
 //Here connection to DB using the variables from the .env
-<<<<<<< HEAD
 mongoose.connect(process.env.DB_CONNECTION_REG)
-=======
-mongoose.connect(process.env.DATABASE_URL)
->>>>>>> origin/main
     .then(() => console.log('DB is connected!'))
     .catch((err) => console.error('Unable to connect to DB.', err));
 
@@ -38,11 +34,7 @@ function validateInputs(req, res, next) {
         return res.status(400).json({ message: 'pnumber should be 8 digits only' });
     }
 
-<<<<<<< HEAD
     // Validation for patientByName, Patient Name can be only letters.
-=======
-    // Validation for pname, Patient Name can be only letters.
->>>>>>> origin/main
     if (!/^[a-zA-Z\s]+$/.test(pname)) {
         return res.status(400).json({ message: 'name should only include alphabets' });
     }
@@ -88,21 +80,12 @@ function validateInputs(req, res, next) {
 }
 
 // the next subsections including the API calls of get, post & delete
-<<<<<<< HEAD
 //          /v1/allPatients                ->        to get all records 
 //          /v1/patientByNumber/xxxxxxxx    ->        to get a particual recrod
 //          /v1/patientByName/*             ->        to search names          
 //          /v1/patientByNumber/xxxxxxxx     ->        to delete a particual recrod
 
 regapp.get('/v1/allPatients', verifyToken, async (req, res) => {
-=======
-//          /v1/list                ->        to get all records 
-//          /v1/pnumber/xxxxxxxx    ->        to get a particual recrod
-//          /v1/pname/*             ->        to search names          
-//          /v1/delete/xxxxxxxx     ->        to delete a particual recrod
-
-regapp.get('/v1/list', verifyToken, async (req, res) => {
->>>>>>> origin/main
     try {
         const readRecord = await regops.find();    //get all records
         res.json(readRecord);
@@ -111,26 +94,16 @@ regapp.get('/v1/list', verifyToken, async (req, res) => {
     }
 });
 
-<<<<<<< HEAD
 regapp.get('/v1/patientByNumber/:pnumber', async (req, res) => {
-=======
-regapp.get('/v1/pnumber/:pnumber', async (req, res) => {
->>>>>>> origin/main
     try {
         // Fetch the records based on pnumber, one recrod at a time
         const readRecord = await regops.find({ pnumber: req.params.pnumber });
 
         // Log patient view, logging patient viewed and associated user viewed the record
         const logEntry = new logops({
-<<<<<<< HEAD
             reglog: `Patient with patientByNumber ${req.params.pnumber} viewed!`,
             timestamp: new Date().toISOString(),
             user: "TBD"
-=======
-            reglog: `Patient with pnumber ${req.params.pnumber} viewed!`,
-            timestamp: new Date().toISOString(),
-            user: req.user.username
->>>>>>> origin/main
         });
         await logEntry.save(); // Save the log entry to the database
 
@@ -143,11 +116,7 @@ regapp.get('/v1/pnumber/:pnumber', async (req, res) => {
     }
 });
 
-<<<<<<< HEAD
 regapp.get('/v1/patientByName/:pname', async (req, res) => {
-=======
-regapp.get('/v1/pname/:pname', async (req, res) => {
->>>>>>> origin/main
     try {
         const partialName = req.params.pname;
         const regex = new RegExp(partialName, 'i');
@@ -156,15 +125,9 @@ regapp.get('/v1/pname/:pname', async (req, res) => {
 
         // Log patient search, user activtites including user details
         const logEntry = new logops({
-<<<<<<< HEAD
             reglog: `Patient search with patientByName ${req.params.pname} performed!`,
             timestamp: new Date().toISOString(),
             user: "TBD"
-=======
-            reglog: `Patient search with pname ${req.params.pname} performed!`,
-            timestamp: new Date().toISOString(),
-            user: req.user.username
->>>>>>> origin/main
         });
         await logEntry.save();
     } catch (err) {
@@ -184,11 +147,7 @@ regapp.post('/v1/reg/', verifyToken, verifyClerkRole, validateInputs, async (req
         const logEntry = new logops({
             reglog: JSON.stringify(req.body) + " patient registered!",  //retrun the registered record along with a confiraiton. 
             timestamp: new Date().toISOString(),
-<<<<<<< HEAD
             user: "TBD"
-=======
-            user: req.user.username
->>>>>>> origin/main
         });
         await logEntry.save();
 
@@ -201,13 +160,8 @@ regapp.post('/v1/reg/', verifyToken, verifyClerkRole, validateInputs, async (req
     }
 });
 
-<<<<<<< HEAD
 // DELETE route to delete records based on patientByNumber
 regapp.delete('/v1/patientByNumber/:pnumber', async (req, res) => {
-=======
-// DELETE route to delete records based on pnumber
-regapp.delete('/v1/delete/:pnumber', async (req, res) => {
->>>>>>> origin/main
     try {
         const deletedRecord = await regops.findOneAndDelete({ pnumber: req.params.pnumber });
         if (!deletedRecord) {
@@ -218,11 +172,7 @@ regapp.delete('/v1/delete/:pnumber', async (req, res) => {
         const logEntry = new logops({
             reglog: JSON.stringify(req.body) + " patient deleted!", //return deleted record and log it with a timestamp
             timestamp: new Date().toISOString(),
-<<<<<<< HEAD
-            user: "TBD"
-=======
             user: req.user.username
->>>>>>> origin/main
         });
         await logEntry.save();
     } catch (err) {
