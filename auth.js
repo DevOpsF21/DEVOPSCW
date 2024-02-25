@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { verifyToken } = require('./middleware/authMiddleware');
+const { verifyToken } = require("./middleware/authMiddleware");
 const { ObjectId } = require("mongodb");
 
 const { connectToDb, getDb } = require("./db");
@@ -22,14 +22,14 @@ connectToDb((err) => {
 });
 
 // Updated /users POST endpoint to store user in MongoDB
-app.post("/v1/createUser", async (req, res) => {
+app.post("/v1/user", async (req, res) => {
   const { username, email, password, roles } = req.body;
   try {
     const db = getDb();
 
     // Check for existing user with the same username or email
     const existingUser = await db.collection("auth").findOne({
-      $or: [{ username: username }, { email: email }]
+      $or: [{ username: username }, { email: email }],
     });
 
     if (existingUser) {
@@ -62,43 +62,57 @@ app.post("/v1/login", async (req, res) => {
     const user = await db
       .collection("auth")
       .findOne({ username: req.body.username });
-    console.log(user);
     if (user == null) {
       return res.status(400).send("Cannot find user");
     }
     if (await bcrypt.compare(req.body.password, user.password)) {
       // Generate and return a JWT token
-      const token = jwt.sign({
-        _id: user._id,
-        username: user.username, // Include username here
-        roles: user.roles
-      }, process.env.JWT_SECRET, { expiresIn: "2h" });
-      res.json({ token: token, username: user.username, roles: user.roles });
+      const token = jwt.sign(
+        {
+          _id: user._id,
+          username: user.username,
+          roles: user.roles,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "2h" }
+      );
+      let redirectTo = "";
+      if (user.roles[0] === "clerk") {
+        redirectTo = "http://localhost:8080/v1/list/";
+      } else if (user.roles[0] === "nurse") {
+        redirectTo = "http://localhost:8686/v1/rooms/";
+      }
+      res.json({
+        message:
+          "Welcome " + user.username + "!, You are logged in Successfuly ",
+        token: token,
+        redirectTo: redirectTo,
+      });
     } else {
-      res.status(401).send("Not Allowed");
+      res.send("Not Allowed");
     }
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).send("An error occurred during login");
   }
 });
-
-// Example of a protected route
+// Protected route
 app.get("/v1/protected", verifyToken, (req, res) => {
   res.send("This is a protected route");
 });
 
 // Endpoint to change user password
-app.post("/v1/changePassword", verifyToken, async (req, res) => {
+app.post("/v1/authChange", verifyToken, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
-  const userId = req.user._id; // Assuming _id is stored in JWT payload
-
+  const userId = req.user._id;
   try {
     const db = getDb();
-    const user = await db.collection("auth").findOne({ _id: new ObjectId(userId) });
+    const user = await db
+      .collection("auth")
+      .findOne({ _id: new ObjectId(userId) });
 
     if (!user) {
-      return res.status(404).send("User not found.");
+      return res.send("User not found.");
     }
 
     // Verify old password
@@ -112,10 +126,12 @@ app.post("/v1/changePassword", verifyToken, async (req, res) => {
     const hashedNewPassword = await bcrypt.hash(newPassword, salt);
 
     // Update password in the database
-    await db.collection("auth").updateOne(
-      { _id: new ObjectId(userId) },
-      { $set: { password: hashedNewPassword } }
-    );
+    await db
+      .collection("auth")
+      .updateOne(
+        { _id: new ObjectId(userId) },
+        { $set: { password: hashedNewPassword } }
+      );
 
     res.send("Password changed successfully.");
   } catch (error) {
@@ -123,5 +139,3 @@ app.post("/v1/changePassword", verifyToken, async (req, res) => {
     res.status(500).send("An error occurred while changing the password.");
   }
 });
-
-// Don't forget to set your process.env.JWT_SECRET before running the application.
