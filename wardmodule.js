@@ -43,6 +43,12 @@ const collectionName = 'Ward Management';
 * capacity=0, number_of_rooms=0,current_patients=0
 2. update ward details as needed
 */
+
+/*
+what is left:
+1. create a user in the user database with a role = admission
+2. change below code so that only addmission guys can perform the actions
+*/
 wardapp.post('/v1/ward/:operation',  async (req, res) => {
 
     /**
@@ -128,7 +134,7 @@ wardapp.post('/v1/ward/:operation',  async (req, res) => {
 /**
  * adding maintenance history to each ward
  */
-wardapp.post('/v1/addmaintenance/:wardnumber/',  async (req, res) => {
+wardapp.post('/v1/maintenance/:wardnumber/',  async (req, res) => {
     console.log("post function")
     //console.log(req.body);
     const { wardnumber } = req.params;
@@ -188,8 +194,10 @@ wardapp.post('/v1/medicalequipment/:wardnumber/:equipnumber/:operation',  async 
                 "condition": "Good"
             }}
         postman test for update: 
-          {"fields":{
-            "condition": "new"
+          {
+            "fields":{
+            "condition": "new",
+            "equipment_name": "BP Tool"
           }}
      */
     // Create a new MongoClient
@@ -427,7 +435,7 @@ wardapp.post('/v1/addroom/:wardnumber/',  async (req, res) => {
  * prints room type, and free bed number
  */
 
-wardapp.get('/v1/findroom/:wardnumber/:status', async (req, res) => {
+wardapp.get('/v1/roomsearch/:wardnumber/:status', async (req, res) => {
     try {
         const { wardnumber,status} = req.params;
         const client = new MongoClient(uri);
@@ -583,7 +591,7 @@ wardapp.post('/v1/admission/:wardnumber/:roomtype/',  async (req, res) => {
  * if not found return "wrong patient number or patient is discharged"
  * else it show ward details, room and bed details and patient admission details
  */
-wardapp.get('/v1/findpatient/:patientid',  async (req, res) => {
+wardapp.get('/v1/patientsearch/:patientid',  async (req, res) => {
     const {patientid} = req.params;
     console.log(req.params);
     // Create a new MongoClient
