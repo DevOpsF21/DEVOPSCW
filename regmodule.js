@@ -94,7 +94,7 @@ regapp.get('/v1/list', verifyToken, async (req, res) => {
     }
 });
 
-regapp.get('/v1/pnumber/:pnumber', async (req, res) => {
+regapp.get('/v1/pnumber/:pnumber', verifyToken, async (req, res) => {
     try {
         // Fetch the records based on pnumber, one recrod at a time
         const readRecord = await regops.find({ pnumber: req.params.pnumber });
@@ -116,7 +116,7 @@ regapp.get('/v1/pnumber/:pnumber', async (req, res) => {
     }
 });
 
-regapp.get('/v1/pname/:pname', async (req, res) => {
+regapp.get('/v1/pname/:pname', verifyToken, async (req, res) => {
     try {
         const partialName = req.params.pname;
         const regex = new RegExp(partialName, 'i');
@@ -161,7 +161,7 @@ regapp.post('/v1/reg/', verifyToken, verifyClerkRole, validateInputs, async (req
 });
 
 // DELETE route to delete records based on pnumber
-regapp.delete('/v1/delete/:pnumber', async (req, res) => {
+regapp.delete('/v1/10/:pnumber', verifyToken, async (req, res) => {
     try {
         const deletedRecord = await regops.findOneAndDelete({ pnumber: req.params.pnumber });
         if (!deletedRecord) {

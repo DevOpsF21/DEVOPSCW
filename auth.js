@@ -76,18 +76,52 @@ app.post("/v1/login", async (req, res) => {
         process.env.JWT_SECRET,
         { expiresIn: "2h" }
       );
-      let redirectTo = "";
+
       if (user.roles[0] === "clerk") {
-        redirectTo = "http://localhost:8080/v1/list/";
+        let redirectTo_ListOfPatients = "http://localhost:8080/v1/list/";
+        let redirectTo_Delete = "http://localhost:8080/v1/10/";
+        let redirectTo_Register_Patient = "http://localhost:8080/v1/reg/";
+        let redirectTo_Search_Number = "http://localhost:8080/v1/pname/";
+        let redirectTo_Search_Name = "http://localhost:8080/v1/pnumber/";
+        res.json({
+          message:
+            "Welcome " + user.username + "!, You are logged in Successfuly ",
+          token: token,
+          redirectTo_ListOfPatients,
+          redirectTo_Delete,
+          redirectTo_Register_Patient,
+          redirectTo_Search_Number,
+          redirectTo_Search_Name,
+        });
       } else if (user.roles[0] === "nurse") {
-        redirectTo = "http://localhost:8686/v1/rooms/";
+        let redirectTo_list_rooms = "http://localhost:8686/v1/rooms/";
+        let redirectTo_medical_equipment =
+          "http://localhost:8686/v1/medicalequipment/";
+        let redirectTo_ward = "http://localhost:8686/v1/ward/";
+        let redirectTo_maintenance = "http://localhost:8686/v1/maintenance/";
+        let redirectTo_nurse = "http://localhost:8686/v1/nurse/";
+        let redirectTo_addroom = "http://localhost:8686/v1/addroom/";
+        let redirectTo_roomsearch = "http://localhost:8686/v1/roomsearch/";
+        let redirectTo_admission = "http://localhost:8686/v1/admission/";
+        let redirectTo_patientsearch =
+          "http://localhost:8686/v1/patientsearch/";
+        let redirectTo_discharge = "http://localhost:8686/v1/discharge/";
+        res.json({
+          message:
+            "Welcome " + user.username + "!, You are logged in Successfuly ",
+          token: token,
+          redirectTo_list_rooms,
+          redirectTo_medical_equipment,
+          redirectTo_ward,
+          redirectTo_maintenance,
+          redirectTo_nurse,
+          redirectTo_addroom,
+          redirectTo_roomsearch,
+          redirectTo_admission,
+          redirectTo_patientsearch,
+          redirectTo_discharge,
+        });
       }
-      res.json({
-        message:
-          "Welcome " + user.username + "!, You are logged in Successfuly ",
-        token: token,
-        redirectTo: redirectTo,
-      });
     } else {
       res.send("Not Allowed");
     }

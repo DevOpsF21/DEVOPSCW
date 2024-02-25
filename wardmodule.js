@@ -169,11 +169,9 @@ wardapp.post("/v1/maintenance/:wardnumber/", async (req, res) => {
  * if add, it adds the new equipment
  */
 wardapp.post(
-  "/v1/medicalequipment/:wardnumber/:equipnumber/:operation",
+  "/v1/medicalequipment/:wardnumber/:equipnumber/:operation", verifyToken,
   async (req, res) => {
     const { wardnumber, equipnumber, operation } = req.params;
-    console.log(req.params);
-    console.log(operation);
     /**
      postman test for add: 
            {"equipment":{
@@ -254,7 +252,7 @@ wardapp.post(
  * if update: takes field names and the new values and makes the update
  * if add, it adds the new nurse
  */
-wardapp.post("/v1/nurse/:wardnumber/:nurseid/:operation", async (req, res) => {
+wardapp.post("/v1/nurse/:wardnumber/:nurseid/:operation", verifyToken, async (req, res) => {
   const { wardnumber, nurseid, operation } = req.params;
   console.log(req.params);
   console.log(operation);
@@ -343,7 +341,7 @@ wardapp.post("/v1/nurse/:wardnumber/:nurseid/:operation", async (req, res) => {
  * it then updates the ward capacity based on number of beds and
  * adds 1 to number of rooms
  */
-wardapp.post("/v1/addroom/:wardnumber/", async (req, res) => {
+wardapp.post("/v1/addroom/:wardnumber/", verifyToken, async (req, res) => {
   const { wardnumber } = req.params;
   console.log(req.params);
   /**
@@ -404,7 +402,7 @@ wardapp.post("/v1/addroom/:wardnumber/", async (req, res) => {
  * prints room type, and free bed number
  */
 
-wardapp.get("/v1/roomsearch/:wardnumber/:status", async (req, res) => {
+wardapp.get("/v1/roomsearch/:wardnumber/:status", verifyToken, async (req, res) => {
   try {
     const { wardnumber, status } = req.params;
     const client = new MongoClient(uri);
