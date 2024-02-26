@@ -134,7 +134,6 @@ app.post("/v1/login", async (req, res) => {
 app.get("/v1/protected", verifyToken, (req, res) => {
   res.send("This is a protected route");
 });
-
 // Endpoint to change user password
 app.post("/v1/authChange", verifyToken, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
