@@ -147,9 +147,16 @@ app.post("/v1/login", async (req, res) => {
     res.status(500).send("An error occurred during login");
   }
 });
+<<<<<<< HEAD
 
+=======
+// Protected route
+app.get("/v1/protected", verifyToken, (req, res) => {
+  res.send("This is a protected route");
+});
+>>>>>>> b7f2d8ae8e231468cdc90c81fb03a0d410bebea9
 // Endpoint to change user password
-app.post("/v1/authChange", verifyToken, async (req, res) => {
+app.post("/v1/auth", verifyToken, async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   const userId = req.user._id;
   try {
