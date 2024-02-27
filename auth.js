@@ -89,7 +89,7 @@ app.post("/v1/login", async (req, res) => {
         process.env.JWT_SECRET,
         { expiresIn: "2h" }
       );
-
+      let redirectTo_Logout = "http://localhost:3000/v1/logout";
       if (user.roles[0] === "clerk") {
         let redirectTo_ListOfPatients = "http://localhost:8080/v1/list/";
         let redirectTo_Delete = "http://localhost:8080/v1/10/";
@@ -105,6 +105,7 @@ app.post("/v1/login", async (req, res) => {
           redirectTo_Register_Patient,
           redirectTo_Search_Number,
           redirectTo_Search_Name,
+          redirectTo_Logout,
         });
       } else if (user.roles[0] === "nurse") {
         let redirectTo_list_rooms = "http://localhost:8686/v1/rooms/";
@@ -133,6 +134,7 @@ app.post("/v1/login", async (req, res) => {
           redirectTo_admission,
           redirectTo_patientsearch,
           redirectTo_discharge,
+          redirectTo_Logout,
         });
       } else if (user.roles[0] === "admin") {
         let redirectTo_Update_Password = "http://localhost:3000/v1/authChange/";
@@ -146,6 +148,7 @@ app.post("/v1/login", async (req, res) => {
           redirectTo_Update_Password,
           redirectTo_Create_new_User,
           redirectTo_Delete_User,
+          redirectTo_Logout,
         });
       }
     } else {
@@ -199,7 +202,7 @@ app.post("/v1/authChange", verifyToken, async (req, res) => {
 // Endpoint to delete a user by username
 app.delete("/v1/10", verifyToken, async (req, res) => {
   const { username } = req.body;
- 
+
   if (!username) {
     return res.status(400).send("Username is required");
   }
@@ -216,5 +219,31 @@ app.delete("/v1/10", verifyToken, async (req, res) => {
   } catch (error) {
     console.error("Error deleting user:", error);
     res.status(500).send("An error occurred while deleting the user");
+  }
+});
+// Endpoint to logout
+app.delete("/v1/logout", async (req, res) => {
+  const { username } = req.body;
+
+  if (!username) {
+    return res.status(400).send("Username is required");
+  }
+
+  try {
+    const db = getDb();
+    const result = await db.collection("auth").deleteOne({ username });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send("User not found");
+    }
+
+    res
+      .status(200)
+      .send(
+        "We have logged out Successfuly! to login - " +
+          "http://localhost:3000/v1/login"
+      );
+  } catch (error) {
+    console.log(error);
   }
 });
