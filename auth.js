@@ -222,7 +222,7 @@ app.delete("/v1/10", verifyToken, async (req, res) => {
   }
 });
 // Endpoint to logout
-app.delete("/v1/logout", async (req, res) => {
+app.post("/v1/logout", async (req, res) => {
   const { username } = req.body;
 
   if (!username) {
