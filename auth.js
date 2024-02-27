@@ -20,7 +20,15 @@ connectToDb((err) => {
     console.log("Server running on port 3000");
   });
 });
+// Function to validate required fields
+function validateUserInput({ username, email, password, roles }) {
+  // Check if any of the required fields is missing or empty
+  if (!username || !email || !password || !roles) {
+    return false;
+  }
 
+  return true;
+}
 // Updated /users POST endpoint to store user in MongoDB
 app.post("/v1/user", async (req, res) => {
   const { username, email, password, roles } = req.body;
@@ -47,8 +55,13 @@ app.post("/v1/user", async (req, res) => {
       created_at: new Date(),
     };
 
-    await db.collection("auth").insertOne(newUser);
-    res.status(201).send("User created");
+    // Validate user input before inserting into the database
+    if (!validateUserInput(newUser)) {
+      res.status(400).send("All fields are required, except 'created_at'.");
+    } else {
+      await db.collection("auth").insertOne(newUser);
+      res.status(201).send("User created");
+    }
   } catch (error) {
     console.error("Error creating user:", error);
     res.status(500).send("Error creating user");
@@ -121,6 +134,19 @@ app.post("/v1/login", async (req, res) => {
           redirectTo_patientsearch,
           redirectTo_discharge,
         });
+      } else if (user.roles[0] === "admin") {
+        let redirectTo_Update_Password = "http://localhost:3000/v1/authChange/";
+        let redirectTo_Create_new_User = "http://localhost:3000/v1/user/";
+        let redirectTo_Delete_User = "http://localhost:3000/v1/10/";
+
+        res.json({
+          message:
+            "Welcome " + user.username + "!, You are logged in Successfuly ",
+          token: token,
+          redirectTo_Update_Password,
+          redirectTo_Create_new_User,
+          redirectTo_Delete_User,
+        });
       }
     } else {
       res.send("Not Allowed");
@@ -129,10 +155,6 @@ app.post("/v1/login", async (req, res) => {
     console.error("Login error:", error);
     res.status(500).send("An error occurred during login");
   }
-});
-// Protected route
-app.get("/v1/protected", verifyToken, (req, res) => {
-  res.send("This is a protected route");
 });
 
 // Endpoint to change user password
@@ -171,5 +193,28 @@ app.post("/v1/authChange", verifyToken, async (req, res) => {
   } catch (error) {
     console.error("Change password error:", error);
     res.status(500).send("An error occurred while changing the password.");
+  }
+});
+
+// Endpoint to delete a user by username
+app.delete("/v1/10", verifyToken, async (req, res) => {
+  const { username } = req.body;
+ 
+  if (!username) {
+    return res.status(400).send("Username is required");
+  }
+
+  try {
+    const db = getDb();
+    const result = await db.collection("auth").deleteOne({ username });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send("User not found");
+    }
+
+    res.status(200).send("User deleted successfully");
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).send("An error occurred while deleting the user");
   }
 });
