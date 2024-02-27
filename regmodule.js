@@ -84,6 +84,7 @@ function validateInputs(req, res, next) {
 //          /v1/patientByNumber/xxxxxxxx    ->        to get a particual recrod
 //          /v1/patientByName/*             ->        to search names          
 //          /v1/patientByNumber/xxxxxxxx     ->        to delete a particual recrod
+//          /v1/patient/xxxxxxxx             ->        to post a particual recrod
 
 regapp.get('/v1/allPatients', verifyToken, async (req, res) => {
     try {
@@ -136,7 +137,7 @@ regapp.get('/v1/patientByName/:pname', async (req, res) => {
 });
 
 // Protecting the patient registration route
-regapp.post('/v1/reg/', verifyToken, verifyClerkRole, validateInputs, async (req, res) => {
+regapp.post('/v1/patient/', verifyToken, verifyClerkRole, validateInputs, async (req, res) => {
     console.log(req.body);
     const createRecord = new regops(req.body);      //receives the body and reflect it in the DB collection
 
