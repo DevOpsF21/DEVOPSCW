@@ -51,6 +51,7 @@ const patients = 'registrations';
 */
 wardapp.get('/v1/inpatient/:pid/',  async (req, res) => {
     const {pid}=req.params;
+    const role='doctor'
     const pnumber=+pid
     const db = getDb();
     let isError=false;
@@ -64,7 +65,7 @@ wardapp.get('/v1/inpatient/:pid/',  async (req, res) => {
             res.json("Invalid Patient ID");
         }
         else{
-            const links = {
+            let links = {
                 department:patient.department,
                 ward_name:patient.ward_name,
                 room_number:patient.room_number,
@@ -76,6 +77,9 @@ wardapp.get('/v1/inpatient/:pid/',  async (req, res) => {
                 report:"localhost:"+port+"/v1/inpatient/"+pnumber+"/report",
                 medication:"localhost:"+port+"/v1/inpatient/"+pnumber+"/medication",
               };
+            if (user==='doctor'){
+                links.discharge_form="localhost:"+port+"/v1/inpatient/"+pnumber+"/discharge_form";
+            }
             res.json(links);
         }
     } catch (err) {
@@ -181,6 +185,33 @@ wardapp.get('/v1/inpatient/:pid/medication',  async (req, res) => {
             const data = await db.collection(inpatients).aggregate(Pipline).toArray();
             if (data[0].medications.length===0){
                 res.status(500).send('No medications has been added yet');
+            }else{
+                res.json(data);
+            }
+
+        }
+        
+    catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+
+});
+
+wardapp.get('/v1/inpatient/:pid/discharge_form',  async (req, res) => {
+
+    const {pid}=req.params;
+    const pnumber=+pid
+    const db = getDb();
+
+    try {
+            const Pipline=[
+                {$match:{pnumber: pnumber, discharge_form:{$exists:1}}},
+                {$project:{"discharge_form":1,"_id":0}}
+            ]
+            const data = await db.collection(inpatients).aggregate(Pipline).toArray();
+            console.log(data.length)
+            if (data.length===0){
+                res.status(500).send('No discharge from has been added yet');
             }else{
                 res.json(data);
             }
@@ -429,6 +460,50 @@ wardapp.post('/v1/inpatient/:pid/medication',  async (req, res) => {
 
 });
 
+wardapp.post('/v1/inpatient/:pid/discharge_form',  async (req, res) => {
+    const doctor_id=1234
+    const last_checked=new Date().toISOString()
+    /**
+     * {  
+        "diagnosis":"Severe Flu",
+        "treatmen_taken":"we killed her",
+        "discharge_reason":"Death",
+        "future_treatment":"not needed",
+        "perscribed_medications":"not needed"
+        }
+     */
+    const {pid}=req.params;
+    const pnumber=+pid
+    const db = getDb();
 
+    try {
+            const { diagnosis,treatmen_taken,discharge_reason,future_treatment,perscribed_medications} = req.body
+            
+            const details={
+                doctor_id:doctor_id,
+                diagnosis:diagnosis,
+                treatmen_taken:treatmen_taken,
+                report_date:last_checked,
+                discharge_reason:discharge_reason,
+                future_treatment:future_treatment,
+                perscribed_medications:perscribed_medications
+
+            }
+            const update= await db.collection(inpatients).updateOne(
+                {pnumber: pnumber},
+                {$set: {'discharge_form':details}}
+            );
+            if (update.modifiedCount === 1) {
+                res.status(500).json("Discharge Form Added");
+
+            } else {
+                res.status(500).json({ error: 'Failed to add new Discharge Form' });
+            }
+        
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+
+});
 
 wardapp.listen(9191, () => console.log('Ward Nurse Server running on port 9191'));
