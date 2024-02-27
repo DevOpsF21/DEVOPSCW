@@ -221,26 +221,13 @@ app.delete("/v1/10", verifyToken, async (req, res) => {
     res.status(500).send("An error occurred while deleting the user");
   }
 });
-// Endpoint to logout
+// Endpoint to log out
 app.post("/v1/logout", async (req, res) => {
-  const { username } = req.body;
-
-  if (!username) {
-    return res.status(400).send("Username is required");
-  }
-
   try {
-    const db = getDb();
-    const result = await db.collection("auth").deleteOne({ username });
-
-    if (result.deletedCount === 0) {
-      return res.status(404).send("User not found");
-    }
-
     res
       .status(200)
       .send(
-        "We have logged out Successfuly! to login - " +
+        "We have been logged out Successfuly! to login - " +
           "http://localhost:3000/v1/login"
       );
   } catch (error) {
