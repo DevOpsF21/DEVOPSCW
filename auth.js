@@ -21,14 +21,7 @@ connectToDb((err) => {
   });
 });
 // Function to validate required fields
-function validateUserInput({ username, email, password, roles }) {
-  // Check if any of the required fields is missing or empty
-  if (!username || !email || !password || !roles) {
-    return false;
-  }
 
-  return true;
-}
 // Updated /users POST endpoint to store user in MongoDB
 app.post("/v1/user", async (req, res) => {
   const { username, email, password, roles } = req.body;
@@ -56,12 +49,10 @@ app.post("/v1/user", async (req, res) => {
     };
 
     // Validate user input before inserting into the database
-    if (!validateUserInput(newUser)) {
-      res.status(400).send("All fields are required, except 'created_at'.");
-    } else {
+  
       await db.collection("auth").insertOne(newUser);
       res.status(201).send("User created");
-    }
+
   } catch (error) {
     console.error("Error creating user:", error);
     res.status(500).send("Error creating user");
