@@ -91,11 +91,11 @@ app.post("/v1/login", async (req, res) => {
       );
       let redirectTo_Logout = "http://localhost:3000/v1/logout";
       if (user.roles[0] === "clerk") {
-        let redirectTo_ListOfPatients = "http://localhost:8080/v1/list/";
-        let redirectTo_Delete = "http://localhost:8080/v1/10/";
-        let redirectTo_Register_Patient = "http://localhost:8080/v1/reg/";
-        let redirectTo_Search_Number = "http://localhost:8080/v1/pname/";
-        let redirectTo_Search_Name = "http://localhost:8080/v1/pnumber/";
+        let redirectTo_ListOfPatients = "http://localhost:8080/v1/allPatients/";
+        let redirectTo_Delete = "http://localhost:8080/v1/patientByNumber/";
+        let redirectTo_Register_Patient = "http://localhost:8080/v1/patient/";
+        let redirectTo_Search_Number = "http://localhost:8080/v1/patientsByName/";
+        let redirectTo_Search_Name = "http://localhost:8080/v1/patientByNumber/";
         res.json({
           message:
             "Welcome " + user.username + "!, You are logged in Successfuly ",
