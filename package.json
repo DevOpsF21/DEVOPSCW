@@ -17,8 +17,8 @@
   "scripts": {
     "authstart": "nodemon auth.js",
     "regstart": "nodemon regmodule.js",
-    "wardadminstart": "nodemon wardadminmodule.js",
-    "wardnursestart": "nodemon wardnursemodule.js",
+    "wardstartnew": "nodemon wardmodule_new.js",
+    "wardstart": "nodemon wardmodule.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
