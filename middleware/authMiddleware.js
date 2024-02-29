@@ -27,4 +27,17 @@ const verifyClerkRole = (req, res, next) => {
   }
 };
 
-module.exports = { verifyToken, verifyClerkRole };
+const verifyRoles = (allowedRoles) => {
+  return (req, res, next) => {
+    const userRoles = req.user.roles;
+    const isAuthorized = userRoles.some(role => allowedRoles.includes(role));
+    if (!isAuthorized) {
+      return res.status(403).send("Access denied. Insufficient permissions.");
+    }
+    next();
+  };
+};
+
+
+
+module.exports = { verifyToken, verifyClerkRole, verifyRoles };

@@ -15,7 +15,7 @@ const mongoose = require('mongoose');
 const { MongoClient,ObjectId } = require("mongodb");
 require('dotenv/config');
 const bodyParser = require('body-parser');
-const { verifyToken, verifyClerkRole } = require('./middleware/authMiddleware');
+const { verifyToken, verifyRoles } = require('./middleware/authMiddleware');
 
 //Two schemas are used under the Mongo collection for storing and retreiving the records.
 const inpatientops = require('../DEVOPSCW/dbops/inpatientops');
@@ -52,7 +52,7 @@ const wardCollection = 'wards';
  */
 
 /**should be accessed only by admin role */
-wardapp.post('/v1/inpatient/',  async (req, res) => {
+wardapp.post('/v1/inpatient/', verifyToken, verifyRoles(['nurse', 'doctor']),  async (req, res) => {
     /**
      * link body sample:
      * {
@@ -169,7 +169,7 @@ wardapp.post('/v1/inpatient/',  async (req, res) => {
 /**
  * view all patients that has discharge form ready
  */
-wardapp.get('/v1/discharge/',  async (req, res) => {
+wardapp.get('/v1/discharge/', verifyToken, verifyRoles(['nurse', 'doctor']),  async (req, res) => {
     const db = getDb();
     let isError=false;
     let links=[];
@@ -195,7 +195,7 @@ wardapp.get('/v1/discharge/',  async (req, res) => {
     }
 
 });
-wardapp.get('/v1/discharge/:pid',  async (req, res) => {
+wardapp.get('/v1/discharge/:pid', verifyToken, verifyRoles(['nurse', 'doctor']),  async (req, res) => {
     const db = getDb();
     const {pid} = req.params
     const pnumber =+pid
@@ -213,7 +213,7 @@ wardapp.get('/v1/discharge/:pid',  async (req, res) => {
     }
 
 });
-wardapp.post('/v1/discharge/:pid',  async (req, res) => {
+wardapp.post('/v1/discharge/:pid', verifyToken, verifyRoles(['nurse', 'doctor']),  async (req, res) => {
     const db = getDb();
     const {pid} = req.params
     const pnumber =+pid
@@ -267,7 +267,7 @@ wardapp.post('/v1/discharge/:pid',  async (req, res) => {
  * type:  bp, cardiac, temperature
  * for test i amnot checking nurse id
 */
-wardapp.get('/v1/inpatient/:pid/',  async (req, res) => {
+wardapp.get('/v1/inpatient/:pid/', verifyToken, verifyRoles(['nurse', 'doctor']),  async (req, res) => {
     const {pid}=req.params;
     const role='doctor'
     const pnumber=+pid
@@ -306,7 +306,7 @@ wardapp.get('/v1/inpatient/:pid/',  async (req, res) => {
 
 });
 
-wardapp.get('/v1/inpatient/:pid/vitalsigns/:type',  async (req, res) => {
+wardapp.get('/v1/inpatient/:pid/vitalsigns/:type', verifyToken, verifyRoles(['nurse', 'doctor']),  async (req, res) => {
 
     const {pid,type}=req.params;
     const pnumber=+pid
@@ -359,7 +359,7 @@ wardapp.get('/v1/inpatient/:pid/vitalsigns/:type',  async (req, res) => {
     }
 
 });
-wardapp.get('/v1/inpatient/:pid/report',  async (req, res) => {
+wardapp.get('/v1/inpatient/:pid/report', verifyToken, verifyRoles(['nurse', 'doctor']),  async (req, res) => {
 
     const {pid}=req.params;
     const pnumber=+pid
@@ -387,7 +387,7 @@ wardapp.get('/v1/inpatient/:pid/report',  async (req, res) => {
 
 });
 
-wardapp.get('/v1/inpatient/:pid/medication',  async (req, res) => {
+wardapp.get('/v1/inpatient/:pid/medication', verifyToken, verifyRoles(['nurse', 'doctor']),  async (req, res) => {
 
     const {pid}=req.params;
     const pnumber=+pid
@@ -415,7 +415,7 @@ wardapp.get('/v1/inpatient/:pid/medication',  async (req, res) => {
 
 });
 
-wardapp.get('/v1/inpatient/:pid/discharge_form',  async (req, res) => {
+wardapp.get('/v1/inpatient/:pid/discharge_form', verifyToken, verifyRoles(['nurse', 'doctor']), async (req, res) => {
 
     const {pid}=req.params;
     const pnumber=+pid
@@ -442,7 +442,7 @@ wardapp.get('/v1/inpatient/:pid/discharge_form',  async (req, res) => {
 
 });
 
-wardapp.post('/v1/inpatient/:pid/vitalsigns/:type',  async (req, res) => {
+wardapp.post('/v1/inpatient/:pid/vitalsigns/:type', verifyToken, verifyRoles(['nurse', 'doctor']), async (req, res) => {
     const nurse_id=1234
     const last_checked=new Date().toISOString()
     /**
@@ -602,7 +602,7 @@ wardapp.post('/v1/inpatient/:pid/vitalsigns/:type',  async (req, res) => {
 
 });
 
-wardapp.post('/v1/inpatient/:pid/report',  async (req, res) => {
+wardapp.post('/v1/inpatient/:pid/report', verifyToken, verifyRoles(['nurse', 'doctor']), async (req, res) => {
     const nurse_id=1234
     const last_checked=new Date().toISOString()
     /**
@@ -639,7 +639,7 @@ wardapp.post('/v1/inpatient/:pid/report',  async (req, res) => {
 
 });
 
-wardapp.post('/v1/inpatient/:pid/medication',  async (req, res) => {
+wardapp.post('/v1/inpatient/:pid/medication', verifyToken, verifyRoles(['nurse', 'doctor']), async (req, res) => {
     const nurse_id=1234
     const last_checked=new Date().toISOString()
     /**
@@ -678,7 +678,7 @@ wardapp.post('/v1/inpatient/:pid/medication',  async (req, res) => {
 
 });
 
-wardapp.post('/v1/inpatient/:pid/discharge_form',  async (req, res) => {
+wardapp.post('/v1/inpatient/:pid/discharge_form', verifyToken, verifyRoles(['nurse', 'doctor']), async (req, res) => {
     const doctor_id=1234
     const last_checked=new Date().toISOString()
     /**

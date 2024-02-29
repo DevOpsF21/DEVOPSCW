@@ -85,7 +85,7 @@ function validateInputs(req, res, next) {
 //          /v1/pname/*             ->        to search names          
 //          /v1/delete/xxxxxxxx     ->        to delete a particual recrod
 
-regapp.get('/v1/list', verifyToken, async (req, res) => {
+regapp.get('/v1/allPatients', verifyToken, verifyClerkRole, async (req, res) => {
     try {
         const readRecord = await regops.find();    //get all records
         res.json(readRecord);
@@ -94,7 +94,7 @@ regapp.get('/v1/list', verifyToken, async (req, res) => {
     }
 });
 
-regapp.get('/v1/pnumber/:pnumber', verifyToken, async (req, res) => {
+regapp.get('/v1/patientByNumber/:pnumber', verifyToken, verifyClerkRole, async (req, res) => {
     try {
         // Fetch the records based on pnumber, one recrod at a time
         const readRecord = await regops.find({ pnumber: req.params.pnumber });
@@ -116,7 +116,7 @@ regapp.get('/v1/pnumber/:pnumber', verifyToken, async (req, res) => {
     }
 });
 
-regapp.get('/v1/pname/:pname', verifyToken, async (req, res) => {
+regapp.get('/v1/PatientsByName/:pname', verifyToken, verifyClerkRole, async (req, res) => {
     try {
         const partialName = req.params.pname;
         const regex = new RegExp(partialName, 'i');
@@ -136,7 +136,7 @@ regapp.get('/v1/pname/:pname', verifyToken, async (req, res) => {
 });
 
 // Protecting the patient registration route
-regapp.post('/v1/reg/', verifyToken, verifyClerkRole, validateInputs, async (req, res) => {
+regapp.post('/v1/patient/', verifyToken, verifyClerkRole, validateInputs, async (req, res) => {
     console.log(req.body);
     const createRecord = new regops(req.body);      //receives the body and reflect it in the DB collection
 
@@ -161,7 +161,7 @@ regapp.post('/v1/reg/', verifyToken, verifyClerkRole, validateInputs, async (req
 });
 
 // DELETE route to delete records based on pnumber
-regapp.delete('/v1/10/:pnumber', verifyToken, async (req, res) => {
+regapp.delete('/v1/patientByNumber/:pnumber', verifyToken, verifyClerkRole, async (req, res) => {
     try {
         const deletedRecord = await regops.findOneAndDelete({ pnumber: req.params.pnumber });
         if (!deletedRecord) {
