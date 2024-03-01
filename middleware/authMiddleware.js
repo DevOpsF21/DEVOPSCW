@@ -17,16 +17,6 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-const verifyClerkRole = (req, res, next) => {
-  // Assuming the roles are stored in an array within req.user.roles
-  if (req.user && req.user.roles && req.user.roles.includes("clerk")) {
-    next(); // User has the 'clerk' role, proceed to the next middleware
-  } else {
-    // User does not have the 'clerk' role, deny access
-    return res.status(403).send("Access denied. Insufficient permissions.");
-  }
-};
-
 const verifyRoles = (allowedRoles) => {
   return (req, res, next) => {
     const userRoles = req.user.roles;
@@ -40,4 +30,4 @@ const verifyRoles = (allowedRoles) => {
 
 
 
-module.exports = { verifyToken, verifyClerkRole, verifyRoles };
+module.exports = { verifyToken, verifyRoles };

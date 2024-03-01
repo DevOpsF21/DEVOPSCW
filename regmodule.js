@@ -11,7 +11,7 @@ const regapp = express();
 const mongoose = require('mongoose');
 require('dotenv/config');
 const bodyParser = require('body-parser');
-const { verifyToken, verifyClerkRole } = require('./middleware/authMiddleware');
+const { verifyToken, verifyRoles } = require('./middleware/authMiddleware');
 
 //Two schemas are used under the Mongo collection for storing and retreiving the records.
 const regops = require('../DEVOPSCW/dbops/regops');
@@ -85,7 +85,7 @@ function validateInputs(req, res, next) {
 //          /v1/pname/*             ->        to search names          
 //          /v1/delete/xxxxxxxx     ->        to delete a particual recrod
 
-regapp.get('/v1/allPatients', verifyToken, verifyClerkRole, async (req, res) => {
+regapp.get('/v1/allPatients', verifyToken, verifyRoles(["clerk"]), async (req, res) => {
     try {
         const readRecord = await regops.find();    //get all records
         res.json(readRecord);
@@ -94,7 +94,7 @@ regapp.get('/v1/allPatients', verifyToken, verifyClerkRole, async (req, res) => 
     }
 });
 
-regapp.get('/v1/patientByNumber/:pnumber', verifyToken, verifyClerkRole, async (req, res) => {
+regapp.get('/v1/patientByNumber/:pnumber', verifyToken, verifyRoles(["clerk"]), async (req, res) => {
     try {
         // Fetch the records based on pnumber, one recrod at a time
         const readRecord = await regops.find({ pnumber: req.params.pnumber });
@@ -116,7 +116,7 @@ regapp.get('/v1/patientByNumber/:pnumber', verifyToken, verifyClerkRole, async (
     }
 });
 
-regapp.get('/v1/PatientsByName/:pname', verifyToken, verifyClerkRole, async (req, res) => {
+regapp.get('/v1/PatientsByName/:pname', verifyToken, verifyRoles(["clerk"]), async (req, res) => {
     try {
         const partialName = req.params.pname;
         const regex = new RegExp(partialName, 'i');
@@ -136,7 +136,7 @@ regapp.get('/v1/PatientsByName/:pname', verifyToken, verifyClerkRole, async (req
 });
 
 // Protecting the patient registration route
-regapp.post('/v1/patient/', verifyToken, verifyClerkRole, validateInputs, async (req, res) => {
+regapp.post('/v1/patient/', verifyToken, verifyRoles(["clerk"]), validateInputs, async (req, res) => {
     console.log(req.body);
     const createRecord = new regops(req.body);      //receives the body and reflect it in the DB collection
 
@@ -161,7 +161,7 @@ regapp.post('/v1/patient/', verifyToken, verifyClerkRole, validateInputs, async 
 });
 
 // DELETE route to delete records based on pnumber
-regapp.delete('/v1/patientByNumber/:pnumber', verifyToken, verifyClerkRole, async (req, res) => {
+regapp.delete('/v1/patientByNumber/:pnumber', verifyToken, verifyRoles(["clerk"]), async (req, res) => {
     try {
         const deletedRecord = await regops.findOneAndDelete({ pnumber: req.params.pnumber });
         if (!deletedRecord) {
