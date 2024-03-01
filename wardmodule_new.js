@@ -300,9 +300,6 @@ wardapp.get('/v1/inpatient/:pid/', verifyToken, verifyRoles(['nurse', 'doctor'])
                 report: "localhost:" + port + "/v1/inpatient/" + pnumber + "/report",
                 medication: "localhost:" + port + "/v1/inpatient/" + pnumber + "/medication",
             };
-            if (user === 'doctor') {
-                links.discharge_form = "localhost:" + port + "/v1/inpatient/" + pnumber + "/discharge_form";
-            }
             res.json(links);
         }
     } catch (err) {
