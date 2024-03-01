@@ -1,5 +1,5 @@
 Introduction
-    The aim of this project is creating a headless care software application for a tertiary care hospital as part of DevOps course project. this system has three man functionality each with it's own designated service endpoint, namely:
+The aim of this project is creating a headless care software application for a tertiary care hospital as part of DevOps course project. this system has three man functionality each with it's own designated service endpoint, namely:
 
     1.	User Authentication
     for the services to be accessed securely users must be registered into the database. Hence, this module is build for user management, including:
