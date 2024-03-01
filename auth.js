@@ -140,7 +140,7 @@ app.post("/v1/authChange", verifyToken, async (req, res) => {
 });
 
 // Endpoint to delete a user by username
-app.delete("/v1/10", verifyToken, verifyRoles(["admin"]), async (req, res) => {
+app.delete("/v1/termination", verifyToken, verifyRoles(["admin"]), async (req, res) => {
   const { username } = req.body;
 
   if (!username) {
