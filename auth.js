@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { verifyToken } = require("./middleware/authMiddleware");
+const { verifyToken, verifyRoles } = require("./middleware/authMiddleware");
 const { ObjectId } = require("mongodb");
 
 const { connectToDb, getDb } = require("./db");
@@ -30,6 +30,7 @@ function validateUserInput({ username, email, password, roles }) {
   return true;
 }
 // Updated /users POST endpoint to store user in MongoDB
+// Create a new user
 app.post("/v1/user", async (req, res) => {
   const { username, email, password, roles } = req.body;
   try {
@@ -68,97 +69,36 @@ app.post("/v1/user", async (req, res) => {
   }
 });
 
-// Add a login endpoint
+
+// Endpoint to log in
 app.post("/v1/login", async (req, res) => {
   try {
     const db = getDb();
-    const user = await db
-      .collection("auth")
-      .findOne({ username: req.body.username });
+    const user = await db.collection("auth").findOne({ username: req.body.username });
     if (user == null) {
       return res.status(400).send("Cannot find user");
     }
     if (await bcrypt.compare(req.body.password, user.password)) {
       // Generate and return a JWT token
       const token = jwt.sign(
-        {
-          _id: user._id,
-          username: user.username,
-          roles: user.roles,
-        },
+        { _id: user._id, username: user.username, roles: user.roles },
         process.env.JWT_SECRET,
         { expiresIn: "2h" }
       );
-      let redirectTo_Logout = "http://localhost:3000/v1/logout";
-      if (user.roles[0] === "clerk") {
-        let redirectTo_ListOfPatients = "http://localhost:8080/v1/list/";
-        let redirectTo_Delete = "http://localhost:8080/v1/10/";
-        let redirectTo_Register_Patient = "http://localhost:8080/v1/reg/";
-        let redirectTo_Search_Number = "http://localhost:8080/v1/pname/";
-        let redirectTo_Search_Name = "http://localhost:8080/v1/pnumber/";
-        res.json({
-          message:
-            "Welcome " + user.username + "!, You are logged in Successfuly ",
-          token: token,
-          redirectTo_ListOfPatients,
-          redirectTo_Delete,
-          redirectTo_Register_Patient,
-          redirectTo_Search_Number,
-          redirectTo_Search_Name,
-          redirectTo_Logout,
-        });
-      } else if (user.roles[0] === "nurse") {
-        let redirectTo_list_rooms = "http://localhost:8686/v1/rooms/";
-        let redirectTo_medical_equipment =
-          "http://localhost:8686/v1/medicalequipment/";
-        let redirectTo_ward = "http://localhost:8686/v1/ward/";
-        let redirectTo_maintenance = "http://localhost:8686/v1/maintenance/";
-        let redirectTo_nurse = "http://localhost:8686/v1/nurse/";
-        let redirectTo_addroom = "http://localhost:8686/v1/addroom/";
-        let redirectTo_roomsearch = "http://localhost:8686/v1/roomsearch/";
-        let redirectTo_admission = "http://localhost:8686/v1/admission/";
-        let redirectTo_patientsearch =
-          "http://localhost:8686/v1/patientsearch/";
-        let redirectTo_discharge = "http://localhost:8686/v1/discharge/";
-        res.json({
-          message:
-            "Welcome " + user.username + "!, You are logged in Successfuly ",
-          token: token,
-          redirectTo_list_rooms,
-          redirectTo_medical_equipment,
-          redirectTo_ward,
-          redirectTo_maintenance,
-          redirectTo_nurse,
-          redirectTo_addroom,
-          redirectTo_roomsearch,
-          redirectTo_admission,
-          redirectTo_patientsearch,
-          redirectTo_discharge,
-          redirectTo_Logout,
-        });
-      } else if (user.roles[0] === "admin") {
-        let redirectTo_Update_Password = "http://localhost:3000/v1/authChange/";
-        let redirectTo_Create_new_User = "http://localhost:3000/v1/user/";
-        let redirectTo_Delete_User = "http://localhost:3000/v1/10/";
-
-        res.json({
-          message:
-            "Welcome " + user.username + "!, You are logged in Successfuly ",
-          token: token,
-          redirectTo_Update_Password,
-          redirectTo_Create_new_User,
-          redirectTo_Delete_User,
-          redirectTo_Logout,
-        });
-      }
+      res.json({
+        message: "Login successful",
+        token: token,
+      });
     } else {
-      res.send("Not Allowed");
+      res.status(401).send("Login not allowed");
     }
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).send("An error occurred during login");
   }
 });
+
+
 
 // Endpoint to change user password
 app.post("/v1/authChange", verifyToken, async (req, res) => {
@@ -200,7 +140,7 @@ app.post("/v1/authChange", verifyToken, async (req, res) => {
 });
 
 // Endpoint to delete a user by username
-app.delete("/v1/10", verifyToken, async (req, res) => {
+app.delete("/v1/10", verifyToken, verifyRoles(["admin"]), async (req, res) => {
   const { username } = req.body;
 
   if (!username) {
