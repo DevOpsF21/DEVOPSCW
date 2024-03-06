@@ -18,8 +18,8 @@ const bodyParser = require('body-parser');
 const { verifyToken, verifyRoles } = require('./middleware/authMiddleware');
 
 //Two schemas are used under the Mongo collection for storing and retreiving the records.
-const inpatientops = require('../DEVOPSCW/dbops/inpatientops');
-const dischargeops = require('../DEVOPSCW/dbops/dischargeops');
+const inpatientops = require('./dbops/inpatientops');
+const dischargeops = require('./dbops/dischargeops');
 const port = 9191;
 
 //Here connection to DB using the variables from the .env
@@ -27,7 +27,7 @@ mongoose.connect(process.env.DATABASE_URL)
     .then(() => console.log('DB is connected!'))
     .catch((err) => console.error('Unable to connect to DB.', err));
 
-const { connectToDb, getDb } = require("./db");
+const { connectToDb, getDb } = require("/app/auth/db");
 // Make sure to call connectToDb before starting the server
 connectToDb((err) => {
     if (err) {
@@ -35,7 +35,7 @@ connectToDb((err) => {
         process.exit(1);
     }
 });
-
+h
 // Connection URI
 const uri = process.env.DATABASE_URL;
 const dbName = 'test';

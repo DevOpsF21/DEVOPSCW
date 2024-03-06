@@ -14,8 +14,8 @@ const bodyParser = require('body-parser');
 const { verifyToken, verifyRoles } = require('./middleware/authMiddleware');
 
 //Two schemas are used under the Mongo collection for storing and retreiving the records.
-const regops = require('../DEVOPSCW/dbops/regops');
-const logops = require('../DEVOPSCW/dbops/logops');
+const regops = require('./dbops/regops');
+const logops = require('./dbops/logops');
 //note that there is no intention to retreive the logops through the applicaiton. Access to the logops will be only for investaiton and will be directily thoruhg Admin access.\
 
 //Here connection to DB using the variables from the .env
@@ -180,4 +180,4 @@ regapp.delete('/v1/patientByNumber/:pnumber', verifyToken, verifyRoles(["clerk"]
     }
 });
 
-regapp.listen(8080, () => console.log('Server running on port 8080'));
+regapp.listen(3000, () => console.log('Server running on port 3000'));
