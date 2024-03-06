@@ -1,0 +1,12 @@
+{
+  "name": "devopscw",
+  "version": "1.0.0",
+  "description": "Introduction\r The aim of this project is creating a headless care software application for a tertiary care hospital as part of DevOps course project. this system has three man functionality each with it's own designated service endpoint, namely:",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
