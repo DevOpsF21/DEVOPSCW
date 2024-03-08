@@ -1,4 +1,5 @@
 FROM node:latest
+
 WORKDIR /app/auth
 RUN mkdir -p /app/auth /app/auth/middleware
 
