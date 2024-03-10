@@ -11,7 +11,7 @@ const regapp = express();
 const mongoose = require('mongoose');
 require('dotenv/config');
 const bodyParser = require('body-parser');
-const { verifyToken, verifyRoles } = require('./middleware/authMiddleware');
+const { verifyToken, verifyRoles } = require('./authMiddleware');
 
 //Two schemas are used under the Mongo collection for storing and retreiving the records.
 const regops = require('./dbops/regops');
@@ -180,4 +180,4 @@ regapp.delete('/v1/patientByNumber/:pnumber', verifyToken, verifyRoles(["clerk"]
     }
 });
 
-regapp.listen(3000, () => console.log('Server running on port 3000'));
+regapp.listen(8080, () => console.log('Server running on port 8080'));

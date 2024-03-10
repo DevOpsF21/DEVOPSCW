@@ -8,8 +8,7 @@ COPY package.json package-lock.json /app/auth/
 COPY auth.js /app/auth/
 COPY db.js /app/auth/
 COPY .env /app/auth/
-COPY node_modules/ /app/auth/ 
-COPY authMiddleware.js /app/auth/middleware
+COPY authMiddleware.js /app/auth/
 # Install dependencies
 RUN npm install
 # Copy the rest of the application files

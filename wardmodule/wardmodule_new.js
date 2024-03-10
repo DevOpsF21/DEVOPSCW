@@ -15,7 +15,7 @@ const mongoose = require('mongoose');
 const { MongoClient, ObjectId } = require("mongodb");
 require('dotenv/config');
 const bodyParser = require('body-parser');
-const { verifyToken, verifyRoles } = require('./middleware/authMiddleware');
+const { verifyToken, verifyRoles } = require('./authMiddleware');
 
 //Two schemas are used under the Mongo collection for storing and retreiving the records.
 const inpatientops = require('./dbops/inpatientops');
@@ -27,7 +27,7 @@ mongoose.connect(process.env.DATABASE_URL)
     .then(() => console.log('DB is connected!'))
     .catch((err) => console.error('Unable to connect to DB.', err));
 
-const { connectToDb, getDb } = require("/app/auth/db");
+const { connectToDb, getDb } = require("./db");
 // Make sure to call connectToDb before starting the server
 connectToDb((err) => {
     if (err) {
@@ -35,7 +35,7 @@ connectToDb((err) => {
         process.exit(1);
     }
 });
-h
+
 // Connection URI
 const uri = process.env.DATABASE_URL;
 const dbName = 'test';

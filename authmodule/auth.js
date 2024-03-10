@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const { verifyToken, verifyRoles } = require("./middleware/authMiddleware");
+const { verifyToken, verifyRoles } = require("./authMiddleware");
 const { ObjectId } = require("mongodb");
 
 const { connectToDb, getDb } = require("./db");
