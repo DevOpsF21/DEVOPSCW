@@ -1,27 +1,69 @@
 pipeline {
     agent any
-    
+
     stages {
-        stage('Build and Push Docker Images') {
+        stage('Clone Repository') {
             steps {
-                script {
-                    // Build and push Docker images for each microservice
-                    docker.build('authmodule', './authmodule')
-                    docker.build('regmodule', './regmodule')
-                    docker.build('wardmodule', './wardmodule')
-                    
-                    docker.withRegistry('https://your-registry-url', 'your-registry-credentials') {
-                        docker.image('authmodule').push('latest')
-                        docker.image('regmodule').push('latest')
-                        docker.image('wardmodule').push('latest')
+                git branch: 'Zaied', url: 'https://github.com/DevOpsF21/DEVOPSCW.git'
+            }
+        }
+        
+        stage('Build and Run Module 1') {
+            steps {
+                dir('authmodule') {
+                    script {
+                        // Build Docker image
+                        sh 'docker build -t authimg .'
+                        
+                        // Push Docker image to registry
+                        sh 'docker push authimg'
+                        
+                        // Run Docker container
+                        sh 'docker run -d -p 7070:3000 authimg'
                     }
                 }
             }
         }
-        stage('Deploy Microservices') {
+
+        stage('Build and Run Module 2') {
             steps {
-                // Deploy microservices using Docker-compose or Kubernetes
-                sh 'kubectl apply -f deployment.yaml' // Example command for Kubernetes deployment
+                dir('regmodule') {
+                    script {
+                        // Build Docker image
+                        sh 'docker build -t regimg .'
+                        
+                        // Push Docker image to registry
+                        sh 'docker push regimg'
+                        
+                        // Run Docker container
+                        sh 'docker run -d -p 9090:3000 regimg'
+                    }
+                }
+            }
+        }
+
+        stage('Build and Run Module 3') {
+            steps {
+                dir('wardmodule') {
+                    script {
+                        // Build Docker image
+                        sh 'docker build -t wardimg .'
+                        
+                        // Push Docker image to registry
+                        sh 'docker push wardimg'
+                        
+                        // Run Docker container
+                        sh 'docker run -d -p 5050:3000 wardimg'
+                    }
+                }
+            }
+        }
+        
+        stage('Test with Postman') {
+            steps {
+                // Execute Postman tests here
+                // Example:
+                // sh 'newman run <collection-file>.json -e <environment-file>.json'
             }
         }
     }
